@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Head Math</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+    margin: 0;
+    padding-top: 100px;
+    display: flex;
+    justify-content: center;
+}
+
+/* ---------- GLOBAL HEADER ---------- */
+.global-header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    text-align: center;
+    padding: 15px 0;
+    background: #0f172a;
+    z-index: 10;
+}
+
+/* Rainbow Title */
+.title {
+    font-size: 36px;
+    font-weight: bold;
+    background: linear-gradient(90deg, red, orange, yellow, green, cyan, blue, violet);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rainbow 3s linear infinite;
+    margin: 0;
+}
+
+@keyframes rainbow {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+.subtitle {
+    font-size: 14px;
+    margin: 5px 0 0 0;
+    opacity: 0.8;
+}
+
+.container {
+    width: 90%;
+    max-width: 400px;
+    background: #1e293b;
+    padding: 50px 40px;
+    border-radius: 12px;
+    text-align: center;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.container.game-active {
+    max-width: 600px;
+    min-height: 650px;
+    padding: 60px 50px;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- TRANSITIONS ---------- */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* ---------- READY SCREEN ---------- */
+.ready-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.ready-overlay.active {
+    display: flex;
+}
+
+.ready-message {
+    font-size: 48px;
+    font-weight: bold;
+    color: white;
+    animation: popUp 0.5s ease-in-out;
+}
+
+@keyframes popUp {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+#menu, #termScreen {
+    min-height: 355px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+button {
+    padding: 10px 16px;
+    margin: 8px;
+    border-radius: 8px;
+    border: 2px solid #38bdf8;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+}
+
+button.active {
+    background: #22c55e;
+    border-color: #22c55e;
+}
+
+button.primary {
+    background: #38bdf8;
+}
+
+/* ---------- GAME ---------- */
+.top-score {
+    font-size: 18px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.equation {
+    font-size: 24px;
+    margin: 20px 0;
+}
+
+input {
+    padding: 10px;
+    font-size: 16px;
+    width: 80%;
+}
+
+.feedback {
+    margin-top: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    height: 30px;
+}
+
+.feedback.correct {
+    color: #22c55e;
+    animation: slideUp 0.5s ease;
+}
+
+.feedback.incorrect {
+    color: #ef4444;
+    animation: slideDown 0.5s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(239, 68, 68, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99;
+}
+
+.game-over-overlay.active {
+    display: flex;
+}
+
+.game-over-text {
+    font-size: 72px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    animation: gameOverPulse 0.8s ease-in-out;
+}
+
+@keyframes gameOverPulse {
+    0% {
+        transform: scale(0) rotate(-10deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1) rotate(0deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* ---------- GAME LAYOUT ---------- */
+#game:not(.hidden) {
+    display: flex !important;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.timer-section {
+    text-align: center;
+    min-width: 80px;
+}
+
+.timer-display {
+    font-size: 48px;
+    font-weight: bold;
+    color: #38bdf8;
+    font-family: 'Courier New', monospace;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.timer-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 5px;
+}
+
+.game-content {
+    flex: 1;
+}
+
+.struggle-message {
+    color: #fbbf24;
+    font-size: 14px;
+    margin-top: 10px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* ---------- POWER BUTTONS ---------- */
+.powers-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.powers-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.powers-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.power-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #38bdf8;
+    background: #0f172a;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.power-btn:hover:not(:disabled) {
+    background: #38bdf8;
+    transform: scale(1.1);
+}
+
+.power-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ---------- HOW TO PLAY ---------- */
+.how-to-play-link {
+    margin-top: 20px;
+    color: white;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.how-to-play-link:hover {
+    color: #38bdf8;
+}
+
+#howToPlay {
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.how-to-play-content {
+    color: white;
+    text-align: left;
+}
+
+.how-to-play-content h4 {
+    color: #38bdf8;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+.how-to-play-content p {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ranks-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.rank-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(56, 189, 248, 0.1);
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.rank-emoji {
+    font-size: 24px;
+}
+
+.rank-info {
+    flex: 1;
+}
+
+.rank-name {
+    font-weight: bold;
+    color: #38bdf8;
+}
+
+.rank-requirement {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.back-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 10px;
+    background: #38bdf8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #0ea5e9;
+}
+
+.power-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: #38bdf8;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-bottom: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    border: 1px solid #38bdf8;
+}
+
+.power-btn:hover .power-tooltip:not(:disabled) {
+    opacity: 1;
+}
+
+/* ---------- GAME OVER ---------- */
+.game-over {
+    color: red;
+}
+
+/* ---------- RANK BANNERS ---------- */
+.rank {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    position: relative;
+}
+
+.bronze {
+    background: #cd7f32;
+}
+.bronze::after {
+    content: "💪";
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.silver {
+    background: #c0c0c0;
+    color: black;
+}
+.silver::after {
+    content: "⭐";
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.gold {
+    background: gold;
+    color: black;
+}
+.gold::after {
+    content: "🏆";
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.purple {
+    background: purple;
+    position: relative;
+    animation: glow 1s ease-in-out infinite;
+}
+.purple::after {
+    content: "✨";
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+}
+
+.diamond {
+    background: linear-gradient(45deg, #b9f2ff, white);
+    color: black;
+    position: relative;
+    animation: sparkle 0.6s ease-in-out infinite;
+}
+.diamond::after {
+    content: "💎";
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.eternal {
+    background: linear-gradient(90deg, white, yellow);
+    color: black;
+    position: relative;
+}
+.eternal::after {
+    content: "😇";
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.brokenmath {
+    background: linear-gradient(90deg, #ff6b6b, #ff8e53);
+    position: relative;
+    animation: confuse 0.5s infinite;
+}
+.brokenmath::after {
+    content: "😕";
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+}
+@keyframes confuse {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-2deg); }
+    75% { transform: rotate(2deg); }
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.8); }
+}
+
+@keyframes sparkle {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+</style>
+</head>
+
+<body>
+
+<!-- GLOBAL HEADER -->
+<div class="global-header">
+    <div class="title">HEAD MATH</div>
+    <div class="subtitle">No Calculator Required... Boost your Brain...</div>
+</div>
+
+<!-- READY SCREEN -->
+<div class="ready-overlay" id="readyOverlay">
+    <div class="ready-message">Let's Get Started! 🚀</div>
+</div>
+
+<!-- GAME OVER OVERLAY -->
+<div class="game-over-overlay" id="gameOverOverlay">
+    <div class="game-over-text">GAME OVER</div>
+</div>
+
+<div class="container">
+
+<!-- MENU -->
+<div id="menu">
+    <h3>Select Mode</h3>
+    <button onclick="selectMode('addition')">Addition</button>
+    <button onclick="selectMode('subtraction')">Subtraction</button>
+    <div class="how-to-play-link" onclick="showHowToPlay()">How to Play?</div>
+</div>
+
+<!-- TERM SELECT -->
+<div id="termScreen" class="hidden">
+    <h3>Select Terms</h3>
+    <button id="t2" onclick="chooseTerms(2)">2</button>
+    <button id="t3" onclick="chooseTerms(3)">3</button>
+    <button id="t4" onclick="chooseTerms(4)">4</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="hidden">
+    <div class="timer-section">
+        <div class="timer-display" id="timerDisplay">0s</div>
+        <div class="timer-label">TIME</div>
+    </div>
+    
+    <div class="game-content">
+        <div class="top-score" id="topScore">Score: 0</div>
+        <div class="equation" id="equation"></div>
+        <input type="text" id="answer" placeholder="Enter answer">
+        <br>
+        <button class="primary" onclick="submitAnswer()">Submit</button>
+        <div class="feedback" id="feedback"></div>
+        <div class="struggle-message" id="struggleMessage" style="display: none;">Struggle? Why not use power?</div>
+    </div>
+    
+    <div class="powers-section">
+        <div class="powers-label">POWER</div>
+        <div class="powers-container">
+            <button class="power-btn" id="calculatorBtn" onclick="usePowerCalculator()">
+                <span class="power-tooltip">Get the right answer immediately</span>
+                🧮
+            </button>
+            <button class="power-btn" id="digitsBtn" onclick="usePowerDigits()">
+                <span class="power-tooltip">Remove one digit randomly</span>
+                🔢
+            </button>
+            <button class="power-btn" id="boostBtn" onclick="usePowerBoost()">
+                <span class="power-tooltip">Next correct answer = 5 pts</span>
+                🚀
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- HOW TO PLAY -->
+<div id="howToPlay" class="hidden">
+    <div class="how-to-play-content">
+        <h3>How to Play</h3>
+        
+        <h4>Game Rules</h4>
+        <p>• Select a game mode: <strong>Addition</strong> or <strong>Subtraction</strong></p>
+        <p>• For Addition, choose the number of terms (2, 3, or 4)</p>
+        <p>• Solve the math problems as quickly as you can</p>
+        <p>• Enter your answer and click Submit</p>
+        <p>• Get it right to earn points and move to the next question</p>
+        <p>• Get it wrong and the game ends</p>
+        <p>• Empty answers won't end the game - try again!</p>
+        
+        <h4>Power Ups</h4>
+        <p>• <strong>🧮 Calculator:</strong> Get the right answer immediately (+1 point)</p>
+        <p>• <strong>🔢 Digits:</strong> Remove one random digit from a number to make it easier</p>
+        <p>• <strong>🚀 Boost:</strong> Next correct answer gives you 5 points instead of 1</p>
+        <p>• Each power can only be used once per game</p>
+        
+        <h4>Timer</h4>
+        <p>• A timer appears on the left showing how long you're thinking</p>
+        <p>• After 15 seconds, you'll get a hint to use your powers if needed</p>
+        
+        <h4>Ranks</h4>
+        <p>Achieve different ranks based on your score:</p>
+        <div class="ranks-list">
+            <div class="rank-item">
+                <div class="rank-emoji">😕</div>
+                <div class="rank-info">
+                    <div class="rank-name">Broken Math</div>
+                    <div class="rank-requirement">Score: 0+</div>
+                </div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-emoji">💪</div>
+                <div class="rank-info">
+                    <div class="rank-name">Know Math</div>
+                    <div class="rank-requirement">Score: 5+</div>
+                </div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-emoji">⭐</div>
+                <div class="rank-info">
+                    <div class="rank-name">Basic Math</div>
+                    <div class="rank-requirement">Score: 10+</div>
+                </div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-emoji">🏆</div>
+                <div class="rank-info">
+                    <div class="rank-name">Abstract Math</div>
+                    <div class="rank-requirement">Score: 20+</div>
+                </div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-emoji">✨</div>
+                <div class="rank-info">
+                    <div class="rank-name">Mega Math</div>
+                    <div class="rank-requirement">Score: 50+</div>
+                </div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-emoji">💎</div>
+                <div class="rank-info">
+                    <div class="rank-name">Super Math</div>
+                    <div class="rank-requirement">Score: 100+</div>
+                </div>
+            </div>
+            <div class="rank-item">
+                <div class="rank-emoji">😇</div>
+                <div class="rank-info">
+                    <div class="rank-name">Eternal Math</div>
+                    <div class="rank-requirement">Score: 150+</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class="back-btn" onclick="goMenu()">Back to Menu</button>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameOver" class="hidden">
+    <h2 class="game-over">Game Over</h2>
+    <p id="finalTime" style="color: #38bdf8; font-weight: bold;"></p>
+    <p>Your Score: <span id="finalScore"></span></p>
+
+    <div id="rankBanner"></div>
+
+    <button onclick="restartGame()">Restart</button>
+    <button onclick="goMenu()">Main Menu</button>
+</div>
+
+</div>
+
+<script>
+let mode = "";
+let terms = 2;
+let score = 0;
+let correctAnswer = 0;
+let usedCalculator = false;
+let usedDigits = false;
+let usedBoost = false;
+let boostActive = false;
+let currentNumbers = [];
+let questionStartTime = 0;
+let timerInterval = null;
+let struggleShownTime = 0;
+
+/* ---------- WEIGHTED RANDOM ---------- */
+function weightedNumber() {
+    let r = Math.random();
+    if (r < 0.8) return Math.floor(Math.random()*90)+10;
+    if (r < 0.95) return Math.floor(Math.random()*900)+100;
+    return Math.floor(Math.random()*9000)+1000;
+}
+
+/* ---------- MODE ---------- */
+function selectMode(m) {
+    mode = m;
+    if (m === "addition") {
+        menu.classList.add("hidden");
+        termScreen.classList.remove("hidden");
+    } else {
+        showReadyAnimation();
+    }
+}
+
+function chooseTerms(n) {
+    terms = n;
+
+    document.querySelectorAll("#termScreen button").forEach(b => b.classList.remove("active"));
+    document.getElementById("t"+n).classList.add("active");
+
+    setTimeout(showReadyAnimation, 200);
+}
+
+/* ---------- READY ANIMATION ---------- */
+function showReadyAnimation() {
+    readyOverlay.classList.add("active");
+    setTimeout(() => {
+        readyOverlay.classList.remove("active");
+        startGame();
+    }, 2000);
+}
+
+/* ---------- GAME ---------- */
+function startGame() {
+    score = 0;
+    usedCalculator = false;
+    usedDigits = false;
+    usedBoost = false;
+    boostActive = false;
+
+    menu.classList.add("hidden");
+    termScreen.classList.add("hidden");
+    gameOver.classList.add("hidden");
+    game.classList.remove("hidden");
+    
+    document.querySelector(".container").classList.add("game-active");
+
+    // Reset power buttons
+    document.getElementById("calculatorBtn").disabled = false;
+    document.getElementById("digitsBtn").disabled = false;
+    document.getElementById("boostBtn").disabled = false;
+
+    answer.disabled = false;
+    document.getElementById("feedback").textContent = "";
+    document.getElementById("struggleMessage").style.display = "none";
+    updateScore();
+    generateEquation();
+}
+
+function generateEquation() {
+    let text = "";
+
+    if (mode === "addition") {
+        let nums = [];
+        for (let i=0;i<terms;i++) nums.push(weightedNumber());
+        currentNumbers = [...nums];
+        correctAnswer = nums.reduce((a,b)=>a+b,0);
+        text = nums.join(" + ") + " = ?";
+    }
+
+    if (mode === "subtraction") {
+        let a = Math.floor(Math.random()*9999)+1;
+        let b = Math.floor(Math.random()*9999)+1;
+        let big = Math.max(a,b), small = Math.min(a,b);
+        currentNumbers = [big, small];
+        correctAnswer = big - small;
+        text = `${big} - ${small} = ?`;
+    }
+
+    equation.textContent = text;
+    answer.value = "";
+    answer.focus();
+    
+    // Start timer for this question
+    questionStartTime = Date.now();
+    startQuestionTimer();
+}
+
+/* ---------- TIMER SYSTEM ---------- */
+function startQuestionTimer() {
+    // Clear any existing timer
+    if (timerInterval) clearInterval(timerInterval);
+    
+    struggleShownTime = 0;
+    document.getElementById("struggleMessage").style.display = "none";
+    
+    timerInterval = setInterval(() => {
+        let elapsedSeconds = Math.floor((Date.now() - questionStartTime) / 1000);
+        document.getElementById("timerDisplay").textContent = elapsedSeconds + "s";
+        
+        // Show struggle message after 15 seconds
+        if (elapsedSeconds >= 15 && !game.classList.contains("hidden")) {
+            document.getElementById("struggleMessage").style.display = "block";
+        }
+    }, 100);
+}
+
+function stopQuestionTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+function getQuestionTime() {
+    return Math.floor((Date.now() - questionStartTime) / 1000);
+}
+
+function submitAnswer() {
+    let val = answer.value.trim();
+
+    if (val === "") return showNudgeMessage();
+
+    if (!/^-?\d+$/.test(val)) return showIncorrectFeedback();
+
+    if (parseInt(val) === correctAnswer) {
+        if (boostActive) {
+            score += 5;
+            boostActive = false;
+        } else {
+            score++;
+        }
+        updateScore();
+        showCorrectFeedback();
+        setTimeout(generateEquation, 1000);
+    } else {
+        showIncorrectFeedback();
+    }
+}
+
+const correctMessages = ["Correct!!", "Good Job!!", "Fantastic!!", "Sublime!!", "Marvellous!!", "Amazing!!", "Great!!"];
+const incorrectMessages = ["That is wrong", "Wrong!!", "Sorry, that is incorrect!!"];
+
+function showCorrectFeedback() {
+    stopQuestionTimer();
+    const msg = correctMessages[Math.floor(Math.random() * correctMessages.length)];
+    const feedbackEl = document.getElementById("feedback");
+    feedbackEl.textContent = msg;
+    feedbackEl.className = "feedback correct";
+    answer.disabled = true;
+    setTimeout(() => {
+        answer.disabled = false;
+        answer.value = "";
+        feedbackEl.textContent = "";
+    }, 1000);
+}
+
+function showIncorrectFeedback() {
+    stopQuestionTimer();
+    const msg = incorrectMessages[Math.floor(Math.random() * incorrectMessages.length)];
+    const feedbackEl = document.getElementById("feedback");
+    feedbackEl.textContent = msg;
+    feedbackEl.className = "feedback incorrect";
+    answer.disabled = true;
+    setTimeout(() => {
+        endGame();
+    }, 1500);
+}
+
+function showNudgeMessage() {
+    const feedbackEl = document.getElementById("feedback");
+    feedbackEl.textContent = "Hmm... Do not know the answer... Then why don't you just answer one";
+    feedbackEl.className = "feedback incorrect";
+    answer.focus();
+}
+
+function updateScore() {
+    topScore.textContent = "Score: " + score;
+}
+
+/* ---------- POWER SYSTEM ---------- */
+function usePowerCalculator() {
+    if (usedCalculator) return;
+    usedCalculator = true;
+    document.getElementById("calculatorBtn").disabled = true;
+    
+    // Fill in the correct answer
+    answer.value = correctAnswer;
+    answer.disabled = true;
+    
+    // Show feedback and auto-submit
+    showCorrectFeedback();
+    setTimeout(() => {
+        answer.disabled = false;
+        answer.value = "";
+        document.getElementById("feedback").textContent = "";
+        score++;
+        updateScore();
+        generateEquation();
+    }, 1000);
+}
+
+
+function usePowerDigits() {
+    if (usedDigits) return;
+    usedDigits = true;
+    document.getElementById("digitsBtn").disabled = true;
+
+    // -------- ADDITION MODE (unchanged logic) --------
+    if (mode === "addition") {
+        let multiDigitIndices = [];
+
+        currentNumbers.forEach((num, idx) => {
+            if (num.toString().length >= 2) {
+                multiDigitIndices.push(idx);
+            }
+        });
+
+        if (multiDigitIndices.length === 0) return;
+
+        let targetIdx = multiDigitIndices[Math.floor(Math.random() * multiDigitIndices.length)];
+        let targetNum = currentNumbers[targetIdx].toString();
+
+        let digitPos = Math.floor(Math.random() * targetNum.length);
+        let newStr = targetNum.slice(0, digitPos) + targetNum.slice(digitPos + 1);
+
+        if (newStr === "") newStr = "0";
+
+        currentNumbers[targetIdx] = parseInt(newStr);
+
+        correctAnswer = currentNumbers.reduce((a, b) => a + b, 0);
+    }
+
+    // -------- SUBTRACTION MODE (FIXED) --------
+    else if (mode === "subtraction") {
+        let second = currentNumbers[1].toString();
+
+        // If single digit, do nothing (avoid breaking number)
+        if (second.length < 2) return;
+
+        let digitPos = Math.floor(Math.random() * second.length);
+        let newStr = second.slice(0, digitPos) + second.slice(digitPos + 1);
+
+        if (newStr === "") newStr = "0";
+
+        currentNumbers[1] = parseInt(newStr);
+
+        // Recalculate safely
+        correctAnswer = currentNumbers[0] - currentNumbers[1];
+    }
+
+    // -------- UPDATE DISPLAY --------
+    let text = "";
+    if (mode === "addition") {
+        text = currentNumbers.join(" + ") + " = ?";
+    } else {
+        text = `${currentNumbers[0]} - ${currentNumbers[1]} = ?`;
+    }
+
+    document.getElementById("equation").textContent = text;
+}
+
+function usePowerBoost() {
+    if (usedBoost) return;
+    usedBoost = true;
+    boostActive = true;
+    document.getElementById("boostBtn").disabled = true;
+}
+
+/* ---------- RANK SYSTEM ---------- */
+function getRank(s) {
+    if (s >= 150) return ["Eternal Math", "eternal"];
+    if (s >= 100) return ["Super Math", "diamond"];
+    if (s >= 50) return ["Mega Math", "purple"];
+    if (s >= 20) return ["Abstract Math", "gold"];
+    if (s >= 10) return ["Basic Math", "silver"];
+    if (s >= 5) return ["Know Math", "bronze"];
+    return ["Broken Math", "brokenmath"];
+}
+
+/* ---------- GAME OVER ---------- */
+function endGame() {
+    stopQuestionTimer();
+    answer.disabled = true;
+    gameOverOverlay.classList.add("active");
+    
+    const questionTime = getQuestionTime();
+    
+    setTimeout(() => {
+        game.classList.add("hidden");
+        gameOverOverlay.classList.remove("active");
+        gameOver.classList.remove("hidden");
+        document.querySelector(".container").classList.remove("game-active");
+        
+        finalScore.textContent = score;
+        document.getElementById("finalTime").textContent = "Time on last question: " + questionTime + "s";
+        let [name, cls] = getRank(score);
+        rankBanner.innerHTML = `<div class="rank ${cls}">${name}</div>`;
+    }, 1300);
+}
+
+function restartGame() {
+    menu.classList.add("hidden");
+    termScreen.classList.add("hidden");
+    gameOver.classList.add("hidden");
+    
+    if (mode === "addition") {
+        terms = 2;
+        termScreen.classList.remove("hidden");
+        document.querySelectorAll("#termScreen button").forEach(b => b.classList.remove("active"));
+        document.getElementById("t2").classList.add("active");
+    } else {
+        startGame();
+    }
+}
+
+function goMenu() {
+    gameOver.classList.add("hidden");
+    menu.classList.remove("hidden");
+    howToPlay.classList.add("hidden");
+    document.querySelector(".container").classList.remove("game-active");
+    document.querySelectorAll("#termScreen button").forEach(b => b.classList.remove("active"));
+    document.getElementById("t2").classList.add("active");
+    terms = 2;
+    mode = "";
+}
+
+/* ---------- HOW TO PLAY ---------- */
+function showHowToPlay() {
+    menu.classList.add("hidden");
+    howToPlay.classList.remove("hidden");
+}
+
+/* ---------- ENTER ---------- */
+document.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !game.classList.contains("hidden")) {
+        submitAnswer();
+    }
+});
+</script>
+
+</body>
+</html>
