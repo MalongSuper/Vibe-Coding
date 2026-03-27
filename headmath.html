@@ -171,6 +171,7 @@ input {
     padding: 10px;
     font-size: 16px;
     width: 80%;
+    margin-bottom: 15px;
 }
 
 .feedback {
@@ -254,40 +255,48 @@ input {
 /* ---------- GAME LAYOUT ---------- */
 #game:not(.hidden) {
     display: flex !important;
-    align-items: flex-start;
-    gap: 20px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
 }
 
 .timer-section {
     text-align: center;
-    min-width: 80px;
-}
-
-.timer-display {
-    font-size: 48px;
-    font-weight: bold;
-    color: #38bdf8;
-    font-family: 'Courier New', monospace;
-    min-height: 60px;
+    margin-top: 40px;
     display: flex;
     align-items: center;
+    gap: 8px;
     justify-content: center;
 }
 
+.timer-display {
+    font-size: 28px;
+    font-weight: bold;
+    color: #38bdf8;
+    font-family: 'Courier New', monospace;
+    display: inline;
+}
+
 .timer-label {
-    font-size: 12px;
+    font-size: 14px;
     color: #64748b;
-    margin-top: 5px;
+    white-space: nowrap;
 }
 
 .game-content {
-    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 }
 
 .struggle-message {
     color: #fbbf24;
     font-size: 14px;
-    margin-top: 10px;
+    margin-top: 30px;
+    margin-bottom: 0;
     animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -299,9 +308,12 @@ input {
 /* ---------- POWER BUTTONS ---------- */
 .powers-section {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
+    margin-bottom: 20px;
+    width: 100%;
+    justify-content: center;
 }
 
 .powers-label {
@@ -310,11 +322,12 @@ input {
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: 1px;
+    white-space: nowrap;
 }
 
 .powers-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 12px;
 }
 
@@ -359,11 +372,13 @@ input {
     max-height: 80vh;
     overflow-y: auto;
     padding: 20px;
+    position: relative;
 }
 
 .how-to-play-content {
     color: white;
     text-align: left;
+    padding-top: 50px;
 }
 
 .how-to-play-content h4 {
@@ -608,21 +623,6 @@ input {
 
 <!-- GAME -->
 <div id="game" class="hidden">
-    <div class="timer-section">
-        <div class="timer-display" id="timerDisplay">0s</div>
-        <div class="timer-label">TIME</div>
-    </div>
-    
-    <div class="game-content">
-        <div class="top-score" id="topScore">Score: 0</div>
-        <div class="equation" id="equation"></div>
-        <input type="text" id="answer" placeholder="Enter answer">
-        <br>
-        <button class="primary" onclick="submitAnswer()">Submit</button>
-        <div class="feedback" id="feedback"></div>
-        <div class="struggle-message" id="struggleMessage" style="display: none;">Struggle? Why not use power?</div>
-    </div>
-    
     <div class="powers-section">
         <div class="powers-label">POWER</div>
         <div class="powers-container">
@@ -640,10 +640,24 @@ input {
             </button>
         </div>
     </div>
+    
+    <div class="game-content">
+        <div class="top-score" id="topScore">Score: 0</div>
+        <div class="equation" id="equation"></div>
+        <input type="text" id="answer" placeholder="Enter answer">
+        <button class="primary" onclick="submitAnswer()">Submit</button>
+        <div class="feedback" id="feedback"></div>
+        <div class="struggle-message" id="struggleMessage" style="display: none;">Struggle? Why not use power?</div>
+        <div class="timer-section">
+            <div class="timer-label">Time:</div>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+        </div>
+    </div>
 </div>
 
 <!-- HOW TO PLAY -->
 <div id="howToPlay" class="hidden">
+    <button class="back-btn" style="position: absolute; top: 0; left: 0; padding: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: left; z-index: 50;" onclick="goMenu()">←</button>
     <div class="how-to-play-content">
         <h3>How to Play</h3>
         
@@ -663,8 +677,7 @@ input {
         <p>• Each power can only be used once per game</p>
         
         <h4>Timer</h4>
-        <p>• A timer appears on the left showing how long you're thinking</p>
-        <p>• After 15 seconds, you'll get a hint to use your powers if needed</p>
+        <p>• You are not timed because the timer goes up</p>
         
         <h4>Ranks</h4>
         <p>Achieve different ranks based on your score:</p>
@@ -720,16 +733,15 @@ input {
             </div>
         </div>
     </div>
-    <button class="back-btn" onclick="goMenu()">Back to Menu</button>
 </div>
 
 <!-- GAME OVER -->
 <div id="gameOver" class="hidden">
+    <div id="rankBanner"></div>
+    
     <h2 class="game-over">Game Over</h2>
     <p id="finalTime" style="color: #38bdf8; font-weight: bold;"></p>
     <p>Your Score: <span id="finalScore"></span></p>
-
-    <div id="rankBanner"></div>
 
     <button onclick="restartGame()">Restart</button>
     <button onclick="goMenu()">Main Menu</button>
@@ -747,9 +759,11 @@ let usedDigits = false;
 let usedBoost = false;
 let boostActive = false;
 let currentNumbers = [];
+let gameStartTime = 0;
 let questionStartTime = 0;
 let timerInterval = null;
 let struggleShownTime = 0;
+let nudgeTimeout = null;
 
 /* ---------- WEIGHTED RANDOM ---------- */
 function weightedNumber() {
@@ -795,6 +809,7 @@ function startGame() {
     usedDigits = false;
     usedBoost = false;
     boostActive = false;
+    gameStartTime = Date.now();
 
     menu.classList.add("hidden");
     termScreen.classList.add("hidden");
@@ -852,12 +867,18 @@ function startQuestionTimer() {
     struggleShownTime = 0;
     document.getElementById("struggleMessage").style.display = "none";
     
+    questionStartTime = Date.now();
+    
     timerInterval = setInterval(() => {
-        let elapsedSeconds = Math.floor((Date.now() - questionStartTime) / 1000);
-        document.getElementById("timerDisplay").textContent = elapsedSeconds + "s";
+        let elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+        let minutes = Math.floor(elapsedSeconds / 60);
+        let seconds = elapsedSeconds % 60;
+        let timeStr = String(minutes).padStart(2, '0') + ":" + String(seconds).padStart(2, '0');
+        document.getElementById("timerDisplay").textContent = timeStr;
         
-        // Show struggle message after 15 seconds
-        if (elapsedSeconds >= 15 && !game.classList.contains("hidden")) {
+        // Show struggle message after 15 seconds on THIS question
+        let questionTime = Math.floor((Date.now() - questionStartTime) / 1000);
+        if (questionTime >= 15 && !game.classList.contains("hidden")) {
             document.getElementById("struggleMessage").style.display = "block";
         }
     }, 100);
@@ -870,8 +891,11 @@ function stopQuestionTimer() {
     }
 }
 
-function getQuestionTime() {
-    return Math.floor((Date.now() - questionStartTime) / 1000);
+function getTotalGameTime() {
+    let elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+    let minutes = Math.floor(elapsedSeconds / 60);
+    let seconds = elapsedSeconds % 60;
+    return String(minutes).padStart(2, '0') + ":" + String(seconds).padStart(2, '0');
 }
 
 function submitAnswer() {
@@ -897,7 +921,7 @@ function submitAnswer() {
 }
 
 const correctMessages = ["Correct!!", "Good Job!!", "Fantastic!!", "Sublime!!", "Marvellous!!", "Amazing!!", "Great!!"];
-const incorrectMessages = ["That is wrong", "Wrong!!", "Sorry, that is incorrect!!"];
+const incorrectMessages = ["That is wrong!!", "Wrong!!", "Sorry, that is incorrect!!"];
 
 function showCorrectFeedback() {
     stopQuestionTimer();
@@ -926,10 +950,18 @@ function showIncorrectFeedback() {
 }
 
 function showNudgeMessage() {
+    // Clear any existing nudge timeout
+    if (nudgeTimeout) clearTimeout(nudgeTimeout);
+    
     const feedbackEl = document.getElementById("feedback");
-    feedbackEl.textContent = "Hmm... Do not know the answer... Then why don't you just answer one";
+    feedbackEl.textContent = "Hmm... Do not know the answer??... Then why don't you just answer one";
     feedbackEl.className = "feedback incorrect";
     answer.focus();
+    
+    // Fade out after 3 seconds
+    nudgeTimeout = setTimeout(() => {
+        feedbackEl.textContent = "";
+    }, 3000);
 }
 
 function updateScore() {
@@ -1039,10 +1071,11 @@ function getRank(s) {
 /* ---------- GAME OVER ---------- */
 function endGame() {
     stopQuestionTimer();
+    if (nudgeTimeout) clearTimeout(nudgeTimeout);
     answer.disabled = true;
     gameOverOverlay.classList.add("active");
     
-    const questionTime = getQuestionTime();
+    const totalTime = getTotalGameTime();
     
     setTimeout(() => {
         game.classList.add("hidden");
@@ -1051,7 +1084,7 @@ function endGame() {
         document.querySelector(".container").classList.remove("game-active");
         
         finalScore.textContent = score;
-        document.getElementById("finalTime").textContent = "Time on last question: " + questionTime + "s";
+        document.getElementById("finalTime").textContent = "Total time: " + totalTime;
         let [name, cls] = getRank(score);
         rankBanner.innerHTML = `<div class="rank ${cls}">${name}</div>`;
     }, 1300);
