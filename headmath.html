@@ -259,6 +259,7 @@ input {
     align-items: center;
     justify-content: center;
     gap: 0;
+    position: relative;
 }
 
 .timer-section {
@@ -354,13 +355,20 @@ input {
     cursor: not-allowed;
 }
 
+.power-btn.unavailable {
+    opacity: 0.5;
+    border-color: #ef4444 !important;
+    color: #ef4444;
+    cursor: not-allowed;
+}
+
 .power-badge {
     position: absolute;
     bottom: 0;
     right: 0;
     width: 24px;
     height: 24px;
-    background: #22c55e;
+    background: #38bdf8;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -368,7 +376,7 @@ input {
     font-size: 12px;
     font-weight: bold;
     border: 2px solid #1e293b;
-    color: black;
+    color: white;
 }
 
 .power-badge.hidden {
@@ -377,17 +385,47 @@ input {
 
 .power-restore-message {
     position: absolute;
-    top: 20px;
+    top: -50px;
     left: 50%;
     transform: translateX(-50%);
-    background: #22c55e;
-    color: black;
+    background: #fbbf24;
+    color: #1e293b;
     padding: 12px 24px;
     border-radius: 8px;
     font-weight: bold;
     font-size: 16px;
     animation: slideDown 0.5s ease;
     z-index: 50;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+.correct-answer-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 64px;
+    font-weight: bold;
+    color: #22c55e;
+    text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+    pointer-events: none;
+    z-index: 200;
+    animation: popUpAnswer 1.5s ease-out;
+}
+
+@keyframes popUpAnswer {
+    0% {
+        transform: translate(-50%, -50%) scale(0) rotate(-30deg);
+        opacity: 1;
+    }
+    50% {
+        transform: translate(-50%, -60%) scale(1.2) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -80%) scale(0.8) rotate(0deg);
+        opacity: 0;
+    }
 }
 
 /* ---------- CORNER SYMBOLS ---------- */
@@ -856,7 +894,8 @@ let usedBoost = false;
 let restoredCalculator = 0;
 let restoredDigits = 0;
 let restoredBoost = 0;
-let lastRestoreScore = 0;
+let correctAnswerCount = 0;  // Track actual correct answers by user
+let powerUsedThisQuestion = false;  // Track if power was used in current question
 let boostActive = false;
 let currentNumbers = [];
 let gameStartTime = 0;
@@ -911,7 +950,8 @@ function startGame() {
     restoredCalculator = 0;
     restoredDigits = 0;
     restoredBoost = 0;
-    lastRestoreScore = 0;
+    correctAnswerCount = 0;
+    powerUsedThisQuestion = false;
     boostActive = false;
     gameStartTime = Date.now();
 
@@ -958,6 +998,10 @@ function generateEquation() {
     equation.textContent = text;
     answer.value = "";
     answer.focus();
+    
+    // Reset power flag and enable all available powers
+    powerUsedThisQuestion = false;
+    enableAllPowers();
     
     // Start timer for this question
     questionStartTime = Date.now();
@@ -1017,6 +1061,7 @@ function submitAnswer() {
         } else {
             score++;
         }
+        correctAnswerCount++;  // Increment actual correct answers
         updateScore();
         checkPowerRestoration();
         showCorrectFeedback();
@@ -1036,6 +1081,17 @@ function showCorrectFeedback() {
     feedbackEl.textContent = msg;
     feedbackEl.className = "feedback correct";
     answer.disabled = true;
+    
+    // Show pop-up animation of the correct answer
+    const popup = document.createElement("div");
+    popup.className = "correct-answer-popup";
+    popup.textContent = correctAnswer;
+    document.body.appendChild(popup);
+    
+    setTimeout(() => {
+        popup.remove();
+    }, 1500);
+    
     setTimeout(() => {
         answer.disabled = false;
         answer.value = "";
@@ -1076,30 +1132,40 @@ function updateScore() {
 
 function checkPowerRestoration() {
     // Check if we've earned another set of powers (every 5 correct answers)
-    let correctsSinceLast = score - lastRestoreScore;
-    
-    if (correctsSinceLast >= 5) {
-        lastRestoreScore += 5;
-        restoredCalculator++;
-        restoredDigits++;
-        restoredBoost++;
+    if (correctAnswerCount > 0 && correctAnswerCount % 5 === 0) {
         
-        // Reset used flags if they were used
-        if (usedCalculator) {
-            usedCalculator = false;
-            document.getElementById("calculatorBtn").disabled = false;
-        }
-        if (usedDigits) {
-            usedDigits = false;
-            document.getElementById("digitsBtn").disabled = false;
-        }
-        if (usedBoost) {
-            usedBoost = false;
-            document.getElementById("boostBtn").disabled = false;
+        // Randomly select one power to restore
+        let randomPower = Math.floor(Math.random() * 3);
+        let restoredPowerName = "";
+        
+        if (randomPower === 0) {
+            if (usedCalculator) {
+                usedCalculator = false;
+                document.getElementById("calculatorBtn").disabled = false;
+            } else {
+                restoredCalculator++;
+            }
+            restoredPowerName = "Calculator";
+        } else if (randomPower === 1) {
+            if (usedDigits) {
+                usedDigits = false;
+                document.getElementById("digitsBtn").disabled = false;
+            } else {
+                restoredDigits++;
+            }
+            restoredPowerName = "Digits";
+        } else {
+            if (usedBoost) {
+                usedBoost = false;
+                document.getElementById("boostBtn").disabled = false;
+            } else {
+                restoredBoost++;
+            }
+            restoredPowerName = "Boost";
         }
         
         updatePowerBadges();
-        showRestoreMessage();
+        showRestoreMessage(restoredPowerName);
     }
 }
 
@@ -1134,8 +1200,9 @@ function updatePowerBadges() {
     }
 }
 
-function showRestoreMessage() {
+function showRestoreMessage(powerName) {
     let restoreMsg = document.getElementById("restoreMessage");
+    restoreMsg.textContent = "Power Restored ⚡";
     restoreMsg.classList.remove("hidden");
     
     setTimeout(() => {
@@ -1145,7 +1212,11 @@ function showRestoreMessage() {
 
 /* ---------- POWER SYSTEM ---------- */
 function usePowerCalculator() {
+    if (powerUsedThisQuestion) return;  // Already used a power
     if (usedCalculator && restoredCalculator <= 0) return;
+    
+    powerUsedThisQuestion = true;
+    disableOtherPowers();
     
     if (restoredCalculator > 0) {
         restoredCalculator--;
@@ -1173,7 +1244,11 @@ function usePowerCalculator() {
 
 
 function usePowerDigits() {
+    if (powerUsedThisQuestion) return;  // Already used a power
     if (usedDigits && restoredDigits <= 0) return;
+    
+    powerUsedThisQuestion = true;
+    disableOtherPowers();
     
     if (restoredDigits > 0) {
         restoredDigits--;
@@ -1238,7 +1313,11 @@ function usePowerDigits() {
 }
 
 function usePowerBoost() {
+    if (powerUsedThisQuestion) return;  // Already used a power
     if (usedBoost && restoredBoost <= 0) return;
+    
+    powerUsedThisQuestion = true;
+    disableOtherPowers();
     
     if (restoredBoost > 0) {
         restoredBoost--;
@@ -1249,6 +1328,32 @@ function usePowerBoost() {
     
     boostActive = true;
     updatePowerBadges();
+}
+
+function disableOtherPowers() {
+    document.getElementById("calculatorBtn").classList.add("unavailable");
+    document.getElementById("digitsBtn").classList.add("unavailable");
+    document.getElementById("boostBtn").classList.add("unavailable");
+    document.getElementById("calculatorBtn").disabled = true;
+    document.getElementById("digitsBtn").disabled = true;
+    document.getElementById("boostBtn").disabled = true;
+}
+
+function enableAllPowers() {
+    document.getElementById("calculatorBtn").classList.remove("unavailable");
+    document.getElementById("digitsBtn").classList.remove("unavailable");
+    document.getElementById("boostBtn").classList.remove("unavailable");
+    
+    // Re-enable based on availability
+    if (!(usedCalculator && restoredCalculator <= 0)) {
+        document.getElementById("calculatorBtn").disabled = false;
+    }
+    if (!(usedDigits && restoredDigits <= 0)) {
+        document.getElementById("digitsBtn").disabled = false;
+    }
+    if (!(usedBoost && restoredBoost <= 0)) {
+        document.getElementById("boostBtn").disabled = false;
+    }
 }
 
 /* ---------- RANK SYSTEM ---------- */
