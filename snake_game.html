@@ -430,6 +430,17 @@
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
+  function isCorner(x, y, margin = 3){
+    return (x < margin || x >= COLS - margin) && (y < margin || y >= ROWS - margin);
+  }
+
+  function isNearSnakeTail(x, y, distance = 4){
+    if (snake.length === 0) return false;
+    const tail = snake[snake.length - 1];
+    const dist = Math.abs(x - tail.x) + Math.abs(y - tail.y);
+    return dist <= distance;
+  }
+
   /* ================= Color picker UI ================= */
 
   COLORS.forEach((c, i) => {
@@ -548,10 +559,17 @@
 
   function spawnFood(){
     let fx, fy;
+    const allowCorners = Math.random() < 0.05; // 5% chance to allow corners
+    
     do {
       fx = randInt(0, COLS - 1);
       fy = randInt(0, ROWS - 1);
-    } while (snake.some(s => s.x === fx && s.y === fy));
+    } while (
+      snake.some(s => s.x === fx && s.y === fy) ||
+      (!allowCorners && isCorner(fx, fy)) ||
+      (!allowCorners && isNearSnakeTail(fx, fy))
+    );
+    
     food = { x: fx, y: fy };
   }
 
