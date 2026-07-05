@@ -91,9 +91,10 @@
     
     /* Action Panel (Bottom Right Square) */
     .action-panel {
-      position: absolute; right: 15px; bottom: 15px; width: 520px;
+      position: absolute; right: 15px; bottom: 15px; width: 520px; max-height: 250px;
       background: var(--panel-bg); border: 2px solid var(--gold); border-radius: 10px;
-      padding: 12px; display: flex; flex-direction: column; z-index: 12; box-shadow: 0 8px 25px rgba(0,0,0,.8);
+      padding: 12px; display: flex; flex-direction: column; overflow-y: auto;
+      z-index: 12; box-shadow: 0 8px 25px rgba(0,0,0,.8);
     }
     #action-hint { color: #aaa; font-size: 0.85em; text-align: center; margin-bottom: 8px; min-height: 28px; display: flex; align-items: center; justify-content: center; }
     
@@ -116,6 +117,27 @@
     .hero-btn { border-color: var(--gold); background: rgba(201, 162, 75, 0.1); }
     .hero-btn:hover:not(:disabled) { background: rgba(201, 162, 75, 0.3); }
 
+    /* CSS Wave Arrows Overlay */
+    #css-arrow-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 12; }
+    .css-arrow-wrapper { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translate(-50%, -50%); pointer-events: none; animation: pulse 1s infinite alternate;}
+    .arrow-group { display: flex; gap: 6px; align-items: center; justify-content: center; margin-bottom: 6px; }
+    
+    .css-arrow-shape { width: 0; height: 0; border-style: solid; }
+    .css-arrow-shape.right { border-width: 14px 0 14px 22px; border-color: transparent transparent transparent #ff4d4d; }
+    .css-arrow-shape.left { border-width: 14px 22px 14px 0; border-color: transparent #ff4d4d transparent transparent; }
+    .css-arrow-shape.down { border-width: 22px 14px 0 14px; border-color: #ff4d4d transparent transparent transparent; }
+    .css-arrow-shape.up { border-width: 0 14px 22px 14px; border-color: transparent transparent #ff4d4d transparent; }
+    
+    .css-arrow-shape.boss.right { border-left-color: #ff0000; }
+    .css-arrow-shape.boss.left { border-right-color: #ff0000; }
+    .css-arrow-shape.boss.down { border-top-color: #ff0000; }
+    .css-arrow-shape.boss.up { border-bottom-color: #ff0000; }
+
+    .css-arrow-label { background: rgba(20, 25, 30, 0.9); color: #fff; font-size: 14px; padding: 4px 8px; border: 1px solid #ff4d4d; border-radius: 4px; text-shadow: 1px 1px 2px #000; text-align: center; white-space: nowrap; font-weight: bold;}
+    .css-arrow-label.boss { border-color: #ff0000; color: #ff0000; }
+
+    @keyframes pulse { from { transform: translate(-50%, -50%) scale(0.95); } to { transform: translate(-50%, -50%) scale(1.05); } }
+
     /* Shared Modal Styles */
     .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: flex; justify-content: center; align-items: center;}
     .modal-box { background: var(--panel-bg); border: 2px solid var(--gold); padding: 40px; text-align: center; border-radius: 8px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.8);}
@@ -137,7 +159,7 @@
           <p><strong>Strategic Deployment:</strong> When you have enough gold, units in the bottom right panel will illuminate. Select a configuration, then tap an available blue-highlighted plot to deploy.</p>
           <p><strong>Leveling Up:</strong> Select the same unit type and place it onto a standard unit you have already deployed to level it up (up to Level 5) for increased stats! (Heroes cannot level up).</p>
           <p><strong>Management:</strong> Click the "Demolish Coin" at the top right at any time to enter Sell Mode, then click any active red-highlighted unit to dismantle them.</p>
-          <p><strong>Standard Units (50G):</strong> Blade (Fast), Archer (Long Range), Magic (High DMG), Mace (Slow/Heavy), Spear (Balanced).</p>
+          <p><strong>Standard Units (20G - 100G):</strong> Melee (Fist), Blade (Fast), Archer (Long Range), Magic (High DMG), Mace (Slow/Heavy), Spear (Balanced).</p>
           <p><strong>Heroes (150G):</strong> Advanced commanders featuring dynamic battle configurations. Only one of each drafted hero can be deployed simultaneously.</p>
         </div>
       </div>
@@ -162,9 +184,9 @@
         <div class="roster-panel">
           <div class="roster-header">
             <h3>Draft Heroes</h3>
-            <span id="hero-count-display">0 / 5 Selected</span>
+            <span id="hero-count-display">0 / 6 Selected</span>
           </div>
-          <p class="instruction">Select EXACTLY 5 heroes to deploy into battle.</p>
+          <p class="instruction">Select EXACTLY 6 heroes to deploy into battle.</p>
           <div id="hero-grid" class="hero-grid"></div>
         </div>
       </div>
@@ -178,8 +200,10 @@
     <button id="btn-forfeit" class="forfeit-btn">Forfeit</button>
     <canvas id="game-canvas"></canvas>
     
+    <div id="css-arrow-container"></div>
+    
     <div class="hud-overlay">
-      <div class="hud-stat" id="hud-gold">Gold: 300</div>
+      <div class="hud-stat" id="hud-gold">Gold: 500</div>
       <div class="hud-stat" style="display:flex; align-items:center;">
         <span class="css-flag"></span>
         <span id="hud-wave">Flag: 1 / 20</span>
@@ -197,11 +221,12 @@
       
       <div id="content-standard" class="tab-content active">
         <div class="action-grid" id="standard-unit-row">
-          <button class="unit-btn" data-type="Blade" data-is-hero="false"><span class="unit-type">Blade</span><span class="unit-cost">50 G</span></button>
-          <button class="unit-btn" data-type="Archer" data-is-hero="false"><span class="unit-type">Archer</span><span class="unit-cost">50 G</span></button>
-          <button class="unit-btn" data-type="Magic" data-is-hero="false"><span class="unit-type">Magic</span><span class="unit-cost">50 G</span></button>
+          <button class="unit-btn" data-type="Melee" data-is-hero="false"><span class="unit-type">Melee</span><span class="unit-cost">20 G</span></button>
+          <button class="unit-btn" data-type="Blade" data-is-hero="false"><span class="unit-type">Blade</span><span class="unit-cost">30 G</span></button>
+          <button class="unit-btn" data-type="Archer" data-is-hero="false"><span class="unit-type">Archer</span><span class="unit-cost">40 G</span></button>
           <button class="unit-btn" data-type="Mace" data-is-hero="false"><span class="unit-type">Mace</span><span class="unit-cost">50 G</span></button>
-          <button class="unit-btn" data-type="Spear" data-is-hero="false"><span class="unit-type">Spear</span><span class="unit-cost">50 G</span></button>
+          <button class="unit-btn" data-type="Spear" data-is-hero="false"><span class="unit-type">Spear</span><span class="unit-cost">60 G</span></button>
+          <button class="unit-btn" data-type="Magic" data-is-hero="false"><span class="unit-type">Magic</span><span class="unit-cost">100 G</span></button>
         </div>
       </div>
 
@@ -349,13 +374,14 @@
       NS.TitleAnimation = TitleAnimation;
     })(typeof window !== 'undefined' ? window : globalThis);
 
-    // --- PROCEDURAL STICKMAN DRAWING WITH LONG HAIR LOGIC ---
+    // --- PROCEDURAL STICKMAN DRAWING ---
     const UnitDict = {
-      'Blade': { color: '#b0bec5', range: 85, damage: 14, fireRate: 0.5, type: 'melee' },
-      'Archer': { color: '#81c784', range: 190, damage: 9, fireRate: 0.7, type: 'projectile' },
-      'Magic': { color: '#64b5f6', range: 130, damage: 28, fireRate: 1.4, type: 'projectile' },
-      'Mace': { color: '#ffb74d', range: 75, damage: 45, fireRate: 1.8, type: 'melee' },
-      'Spear': { color: '#ba68c8', range: 110, damage: 18, fireRate: 0.8, type: 'melee' }
+      'Melee': { color: '#64b5f6', range: 70, damage: 12, fireRate: 0.6, type: 'melee', cost: 20 },
+      'Blade': { color: '#64b5f6', range: 85, damage: 14, fireRate: 0.5, type: 'melee', cost: 30 },
+      'Archer': { color: '#64b5f6', range: 190, damage: 9, fireRate: 0.7, type: 'projectile', cost: 40 },
+      'Mace': { color: '#64b5f6', range: 75, damage: 45, fireRate: 1.8, type: 'melee', cost: 50 },
+      'Spear': { color: '#64b5f6', range: 125, damage: 18, fireRate: 0.8, type: 'melee', cost: 60 },
+      'Magic': { color: '#64b5f6', range: 130, damage: 28, fireRate: 1.4, type: 'projectile', cost: 100 }
     };
 
     function drawStickman(ctx, x, y, type, isHero, gender, isEnemy, seedTime, hasLongHair) {
@@ -365,9 +391,15 @@
       let color = isEnemy ? '#ff4d4d' : '#ffffff';
       if (!isEnemy && !isHero) {
         color = UnitDict[type].color; 
-      } else if (isHero) {
+      } else if (isHero && !isEnemy) {
         color = '#c9a24b'; 
       }
+      
+      // Override colors for the ultimate bosses
+      if (type === 'Knight') color = '#bdc3c7'; // Silver/Steel
+      if (type === 'Dragon') color = '#e74c3c'; // Blood Red
+      if (type === 'Priestess') color = '#9b59b6'; // Dark Magic Purple
+      if (type === 'MagicHand') color = '#8e24aa'; // Magical violet hand
 
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
@@ -378,7 +410,6 @@
       let cycle = (seedTime * 0.012);
       let bob = isEnemy ? Math.abs(Math.sin(cycle * 1.5)) * 3 : Math.sin(cycle) * 1.5;
 
-      // 0. Long Hair Logic (Draw behind head)
       if (isHero && hasLongHair) {
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 3;
@@ -386,17 +417,15 @@
         ctx.moveTo(0, -22 - bob);
         ctx.quadraticCurveTo(8, -10 - bob, 5, 8 - bob);
         ctx.stroke();
-        ctx.strokeStyle = color; // reset
+        ctx.strokeStyle = color; 
         ctx.lineWidth = isHero ? 3 : 2;
       }
 
-      // 1. Head
       ctx.beginPath();
       ctx.arc(0, -13 - bob, isHero ? 5.5 : 4, 0, Math.PI * 2);
       ctx.fill();
 
-      // Gender Cosmetics distinction
-      if (isHero) {
+      if (isHero && !isEnemy) {
         if (gender === 'female') {
           ctx.beginPath();
           ctx.arc(5, -16 - bob, 2.5, 0, Math.PI * 2);
@@ -415,13 +444,12 @@
         }
       }
 
-      // 2. Spine/Torso
       ctx.beginPath();
       ctx.moveTo(0, -9 - bob);
       ctx.lineTo(0, 3);
       ctx.stroke();
 
-      if (isHero && gender === 'female') {
+      if (isHero && gender === 'female' && !isEnemy) {
         ctx.beginPath();
         ctx.moveTo(0, -2);
         ctx.lineTo(-5, 7);
@@ -430,7 +458,6 @@
         ctx.fill();
       }
 
-      // 3. Legs 
       let swing = isEnemy ? Math.sin(cycle * 1.5) * 6 : 0;
       ctx.beginPath();
       ctx.moveTo(0, 3);
@@ -439,9 +466,10 @@
       ctx.lineTo(4 + swing, 13);
       ctx.stroke();
 
-      // 4. Arms & Equipment
       ctx.beginPath();
-      if (type === 'Blade') {
+      if (type === 'Melee') {
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(6, -1 - bob); ctx.stroke();
+      } else if (type === 'Blade') {
         ctx.moveTo(-3, -4 - bob); ctx.lineTo(6, -1 - bob); ctx.stroke();
         ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = isHero ? 3.5 : 2;
         ctx.beginPath(); ctx.moveTo(6, -1 - bob); ctx.lineTo(14, -8 - bob); ctx.stroke();
@@ -464,6 +492,47 @@
         ctx.strokeStyle = '#d7ccc8';
         ctx.beginPath(); ctx.moveTo(-3, 2 - bob); ctx.lineTo(15, -10 - bob); ctx.stroke();
         ctx.fillStyle = '#b0bec5'; ctx.beginPath(); ctx.arc(15, -10 - bob, 1.5, 0, Math.PI*2); ctx.fill();
+      
+      // --- NEW BOSS VISUALS ---
+      } else if (type === 'Knight') {
+        // Heavy Greatsword
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(6, -1 - bob); ctx.stroke();
+        ctx.strokeStyle = '#ecf0f1'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(6, -1 - bob); ctx.lineTo(18, -12 - bob); ctx.stroke();
+        // Tower Shield
+        ctx.fillStyle = '#7f8c8d'; 
+        ctx.fillRect(-12, -8 - bob, 8, 18);
+        ctx.strokeStyle = '#2c3e50'; ctx.strokeRect(-12, -8 - bob, 8, 18);
+      } else if (type === 'Dragon') {
+        // Dragon Snout
+        ctx.fillStyle = color; ctx.fillRect(2, -15 - bob, 7, 4);
+        // Wings (Procedural Curves)
+        ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, -9 - bob); ctx.quadraticCurveTo(12, -25 - bob, 22, -10 - bob); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, -9 - bob); ctx.quadraticCurveTo(-12, -25 - bob, -22, -10 - bob); ctx.stroke();
+        // Tail
+        ctx.beginPath(); ctx.moveTo(0, 5); ctx.quadraticCurveTo(-10, 15, -20, 2); ctx.stroke();
+      } else if (type === 'Priestess') {
+        // Dark Magic Aura / Orbs
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(6, -6 - bob); ctx.stroke();
+        ctx.strokeStyle = '#8e44ad'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(6, 4); ctx.lineTo(6, -18 - bob); ctx.stroke();
+        ctx.fillStyle = '#f1c40f'; // Gold glowing magic
+        ctx.beginPath(); ctx.arc(6, -20 - bob, 4, 0, Math.PI*2); ctx.fill();
+        // Flowing Robe Base
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.moveTo(-6, 12); ctx.lineTo(6, 12); ctx.lineTo(0, -2); ctx.fill();
+      } else if (type === 'MagicHand') {
+        // Floating magical hand with a glowing aura
+        ctx.save();
+        ctx.translate(8, -8 - bob);
+        ctx.strokeStyle = '#7b1fa2'; ctx.lineWidth = 3;
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.moveTo(-8, 4); ctx.quadraticCurveTo(-14, -6, -10, -14); ctx.quadraticCurveTo(-6, -20, 0, -18); ctx.quadraticCurveTo(8, -14, 12, -4); ctx.quadraticCurveTo(14, 2, 8, 8); ctx.quadraticCurveTo(2, 12, -4, 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#80deea'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, -6, 10, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ffeb3b'; ctx.beginPath(); ctx.arc(2, -8, 2.8, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
       }
 
       ctx.restore();
@@ -471,9 +540,9 @@
 
     // --- GLOBAL STATE ---
     const State = {
-      difficulty: 'Medium', totalFlags: 20, MAX_HEROES: 5,
+      difficulty: 'Medium', totalFlags: 20, MAX_HEROES: 6,
       heroRoster: [], selectedHeroes: [], setupAvatars: [], 
-      gold: 300, lives: 20, currentWave: 1,
+      gold: 500, lives: 30, currentWave: 1, // SET TO 30 FOR ALL MODES
       isGameOver: false, isPausedForForfeit: false,
       pendingUnit: null, sellMode: false,   
       waveState: 'prep', prepTimer: 5.0, currentWaveData: null
@@ -539,7 +608,6 @@
       State.totalFlags = parseInt(target.dataset.flags, 10);
     }));
 
-    // Action Panel Tabs Logic
     document.getElementById('tab-standard').addEventListener('click', () => {
       document.getElementById('tab-standard').classList.add('active');
       document.getElementById('tab-heroes').classList.remove('active');
@@ -556,34 +624,49 @@
     });
 
     function generateHeroRoster() {
-      const classes = ['Blade', 'Archer', 'Magic', 'Mace', 'Spear'];
-      const namesFem = ['Lian','Xing','Mei','Jiao','Nuo','Hua','Lan','Fang','Ying','Bai','Chun','Dai','Fen'];
-      const namesMale = ['Chen','Wei','Jian','Lei','Long','Bo','Feng'];
-      let idCounter = 1;
-      
-      State.heroRoster = [];
-
-      // 4 requested Heroes
-      const specialHeroes = [
+      // 36 fixed heroes with exactly 2-word names
+      const fixedHeroes = [
         { name: 'Lin Wei', classType: 'Magic', gender: 'female', hasLongHair: true },
         { name: 'Mei Ling', classType: 'Spear', gender: 'female', hasLongHair: true },
-        { name: 'General Zhao', classType: 'Blade', gender: 'male', hasLongHair: false },
-        { name: 'Captain Wei', classType: 'Blade', gender: 'male', hasLongHair: false }
+        { name: 'Zhao Yun', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Wei Yan', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Yan Yan', classType: 'Melee', gender: 'female', hasLongHair: true },
+        { name: 'Tie Quan', classType: 'Melee', gender: 'female', hasLongHair: false },
+        { name: 'Jian Guo', classType: 'Melee', gender: 'male', hasLongHair: false },
+        { name: 'Shan Hu', classType: 'Melee', gender: 'male', hasLongHair: false },
+        { name: 'Bo Qin', classType: 'Melee', gender: 'male', hasLongHair: false },
+        { name: 'Lei Gong', classType: 'Melee', gender: 'male', hasLongHair: false },
+        { name: 'Sun Shang', classType: 'Archer', gender: 'female', hasLongHair: true },
+        { name: 'Huang Zhong', classType: 'Archer', gender: 'male', hasLongHair: false },
+        { name: 'Ma Chao', classType: 'Spear', gender: 'male', hasLongHair: false },
+        { name: 'Guan Yu', classType: 'Blade', gender: 'male', hasLongHair: true },
+        { name: 'Zhang Fei', classType: 'Mace', gender: 'male', hasLongHair: false },
+        { name: 'Lu Bu', classType: 'Mace', gender: 'male', hasLongHair: true },
+        { name: 'Diao Chan', classType: 'Magic', gender: 'female', hasLongHair: true },
+        { name: 'Zhu Ge', classType: 'Magic', gender: 'male', hasLongHair: true },
+        { name: 'Pang Tong', classType: 'Magic', gender: 'male', hasLongHair: false },
+        { name: 'Zhou Yu', classType: 'Archer', gender: 'male', hasLongHair: true },
+        { name: 'Xiao Qiao', classType: 'Magic', gender: 'female', hasLongHair: true },
+        { name: 'Da Qiao', classType: 'Magic', gender: 'female', hasLongHair: true },
+        { name: 'Sun Quan', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Liu Bei', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Cao Cao', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Xiahou Dun', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Xiahou Yuan', classType: 'Archer', gender: 'male', hasLongHair: false },
+        { name: 'Xu Chu', classType: 'Mace', gender: 'male', hasLongHair: false },
+        { name: 'Dian Wei', classType: 'Mace', gender: 'male', hasLongHair: false },
+        { name: 'Zhang Liao', classType: 'Spear', gender: 'male', hasLongHair: false },
+        { name: 'Gan Ning', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Tai Shi', classType: 'Archer', gender: 'male', hasLongHair: false },
+        { name: 'Lu Meng', classType: 'Spear', gender: 'male', hasLongHair: false },
+        { name: 'Lu Xun', classType: 'Magic', gender: 'male', hasLongHair: false },
+        { name: 'Huang Gai', classType: 'Mace', gender: 'male', hasLongHair: false },
+        { name: 'Ding Feng', classType: 'Melee', gender: 'male', hasLongHair: false }
       ];
-      specialHeroes.forEach(h => State.heroRoster.push({ id: idCounter++, ...h }));
 
-      // Random Fill
-      namesFem.forEach(n => State.heroRoster.push({
-        id: idCounter++, name: n, gender: 'female', 
-        classType: classes[Math.floor(Math.random()*classes.length)], hasLongHair: false
-      }));
-      namesMale.forEach(n => State.heroRoster.push({
-        id: idCounter++, name: n, gender: 'male', 
-        classType: classes[Math.floor(Math.random()*classes.length)], hasLongHair: false
-      }));
-      
-      State.heroRoster.sort(() => Math.random() - 0.5);
-      
+      // Map IDs to the static roster
+      State.heroRoster = fixedHeroes.map((h, index) => ({ id: index + 1, ...h }));
+
       ui.heroGrid.innerHTML = '';
       State.setupAvatars = [];
 
@@ -613,6 +696,50 @@
       });
     }
 
+    // --- PROCEDURAL CSS ARROWS ---
+    function renderCSSArrows(data) {
+      const container = document.getElementById('css-arrow-container');
+      container.innerHTML = '';
+      if (!data) return;
+      
+      let enemySummary = `PER PATH: ` + data.types.map(t => `${t.quantity}x ${t.type}`).join(' + ');
+      let bossName = State.difficulty === 'Easy' ? 'GIGANTIC KNIGHT' : (State.difficulty === 'Medium' ? 'ELDER DRAGON' : 'DARK PRIESTESS');
+      if (data.isFinalWave) {
+         enemySummary = `20x Force: ` + data.types.map(t => `${t.quantity}x ${t.type}`).join(' + ');
+      }
+
+      data.lanes.forEach(laneIdx => {
+        let laneHasBoss = data.bossLanes && data.bossLanes.includes(laneIdx);
+
+        let wrapper = document.createElement('div');
+        wrapper.className = 'css-arrow-wrapper';
+        
+        if (laneIdx === 0) { wrapper.style.left = '100px'; wrapper.style.top = '50%'; }
+        if (laneIdx === 1) { wrapper.style.left = 'calc(100% - 100px)'; wrapper.style.top = '50%'; }
+        if (laneIdx === 2) { wrapper.style.left = '50%'; wrapper.style.top = '100px'; }
+        if (laneIdx === 3) { wrapper.style.left = '50%'; wrapper.style.top = 'calc(100% - 160px)'; }
+
+        let direction = laneIdx === 0 ? 'right' : laneIdx === 1 ? 'left' : laneIdx === 2 ? 'down' : 'up';
+        let bossClass = laneHasBoss ? 'boss' : '';
+        
+        let arrowHtml = `<div class="css-arrow-shape ${direction} ${bossClass}"></div>`;
+        if (laneIdx === 0 || laneIdx === 1) { arrowHtml += arrowHtml; } // Double horizontal arrows
+
+        let skull = laneHasBoss ? `<span style="font-size:20px;">💀</span>` : '';
+        let labelClass = laneHasBoss ? 'css-arrow-label boss' : 'css-arrow-label';
+        
+        wrapper.innerHTML = `
+          <div class="arrow-group">${arrowHtml} ${skull}</div>
+          <div class="${labelClass}">${enemySummary}${laneHasBoss ? ' + BOSS' : ''}</div>
+        `;
+        container.appendChild(wrapper);
+      });
+    }
+
+    function clearCSSArrows() {
+      document.getElementById('css-arrow-container').innerHTML = '';
+    }
+
     // --- PHASE 3-5: ENGINE DEVELOPMENT ---
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
@@ -625,7 +752,6 @@
     
     const PathEngine = { spawnPoints: [], baseRadius: 42, pathWidth: 36 };
 
-    // FORFEIT CONTROLS
     document.getElementById('btn-forfeit').addEventListener('click', () => {
       State.isPausedForForfeit = true;
       ui.forfeitModal.classList.remove('hidden');
@@ -649,10 +775,11 @@
 
     function initGame() {
       window.addEventListener('resize', resizeCanvas);
+      plots = [];
       resizeCanvas();
 
-      State.gold = 350;
-      State.lives = State.difficulty === 'Hard' ? 10 : 20;
+      State.gold = 500;
+      State.lives = 30; // SET CONSTANT 30 LIVES HERE
       State.currentWave = 1;
       State.isGameOver = false;
       State.isPausedForForfeit = false;
@@ -660,8 +787,8 @@
       State.sellMode = false;
       enemies = []; projectiles = [];
       ui.modal.classList.add('hidden');
+      clearCSSArrows();
 
-      // Populate Hero Action buttons in Bottom Right Panel
       ui.heroUnitRow.innerHTML = '';
       State.selectedHeroes.forEach(hero => {
         const btn = document.createElement('button');
@@ -670,12 +797,11 @@
         btn.dataset.isHero = "true";
         btn.dataset.heroName = hero.name;
         btn.dataset.gender = hero.gender;
-        btn.dataset.hasLongHair = hero.hasLongHair; // Store hair styling info
+        btn.dataset.hasLongHair = hero.hasLongHair;
         btn.innerHTML = `<span class="unit-type">${hero.name}<br>(${hero.classType})</span><span class="unit-cost">150 G</span>`;
         ui.heroUnitRow.appendChild(btn);
       });
 
-      // Bind dynamic UI interactions for Standard & Heroes
       document.querySelectorAll('.unit-btn').forEach(btn => {
         btn.replaceWith(btn.cloneNode(true));
       });
@@ -695,69 +821,93 @@
       H = canvas.height = window.innerHeight;
       cx = W / 2; cy = H / 2;
       
-      // Symmetrical Map Endpoints
       PathEngine.spawnPoints = [
-        {x: -30, y: cy},       // Left 
-        {x: W + 30, y: cy},    // Right
-        {x: cx, y: -30},       // Top
-        {x: cx, y: H + 30}     // Bottom
+        {x: -30, y: cy},
+        {x: W + 30, y: cy},
+        {x: cx, y: -30},
+        {x: cx, y: H + 30}
       ];
 
-      // Procedural Map Grid Adjustments (Extra Row/Column as requested)
-      plots = [];
       const hSpacing = 75; const vSpacing = 75;
-      
-      // Horizontal lane now has 4 rows offset from center path (2 upper, 2 lower)
       const hOffsets = [-110, -55, 55, 110]; 
-      // Vertical lane now has 4 columns offset from center path (2 left, 2 right)
       const vOffsets = [-110, -55, 55, 110]; 
 
-      // Left branch
+      let newPlots = [];
+
+      // Map nodes to logical coordinates (logX, logY) relative to the center
+      let col = -1;
       for(let x = cx - 80; x > 50; x -= hSpacing) {
-        hOffsets.forEach(off => plots.push({x: x, y: cy + off, r: 22, unit: null}));
+        hOffsets.forEach((off, idx) => newPlots.push({x: x, y: cy + off, r: 22, logX: col, logY: idx, unit: null}));
+        col--;
       }
-      // Right branch
+      
+      col = 1;
       for(let x = cx + 80; x < W - 50; x += hSpacing) {
-        hOffsets.forEach(off => plots.push({x: x, y: cy + off, r: 22, unit: null}));
+        hOffsets.forEach((off, idx) => newPlots.push({x: x, y: cy + off, r: 22, logX: col, logY: idx, unit: null}));
+        col++;
       }
-      // Top branch
+      
+      let row = -1;
       for(let y = cy - 80; y > 50; y -= vSpacing) {
-        vOffsets.forEach(off => plots.push({x: cx + off, y: y, r: 22, unit: null}));
+        vOffsets.forEach((off, idx) => newPlots.push({x: cx + off, y: y, r: 22, logX: idx, logY: row, unit: null}));
+        row--;
       }
-      // Bottom branch
+      
+      row = 1;
       for(let y = cy + 80; y < H - 50; y += vSpacing) {
-        vOffsets.forEach(off => plots.push({x: cx + off, y: y, r: 22, unit: null}));
+        vOffsets.forEach((off, idx) => newPlots.push({x: cx + off, y: y, r: 22, logX: idx, logY: row, unit: null}));
+        row++;
       }
+
+      // Preserve existing units by migrating them to their equivalent logical coordinate on the resized grid
+      newPlots.forEach(np => {
+        const oldPlot = plots.find(op => op.logX === np.logX && op.logY === np.logY);
+        if (oldPlot && oldPlot.unit) {
+          np.unit = oldPlot.unit;
+        }
+      });
+
+      // Assign the newly built array (with preserved units) back to the global array
+      plots = newPlots;
     }
 
-    // --- MODIFIED WAVE MANAGER: QUEUE AND BOSS LOGIC ---
     const WaveManager = {
       spawnQueue: [], spawnTimer: 0, spawnInterval: 0.2,
       initWaveSetup() {
         State.waveState = 'prep'; State.prepTimer = 5.0; 
         const isBossWave = State.currentWave % 5 === 0;
+        const isFinalWave = State.currentWave === State.totalFlags;
         
-        let waveData = { types: [], lanes: [0, 1, 2, 3], isBossWave: isBossWave };
+        let waveData = { types: [], lanes: [0, 1, 2, 3], isBossWave: isBossWave, isFinalWave: isFinalWave };
 
-        // Scale Quantity: Wave 1-5 -> 5 per path, Wave 6-10 -> 10 per path, etc.
         let totalPerPath = 5 * Math.ceil(State.currentWave / 5);
 
-        if (State.currentWave >= 5) {
-          let t1 = ['Blade', 'Mace', 'Spear'][State.currentWave % 3];
+        if (isFinalWave) {
+          const candidateTypes = ['Blade', 'Archer', 'Magic', 'Melee'];
+          const shuffled = [...candidateTypes].sort(() => Math.random() - 0.5);
+          const typeA = shuffled[0];
+          const typeB = shuffled[1] || shuffled[0];
+          const split = Math.floor(totalPerPath / 2);
+          waveData.types = [
+            { type: typeA, quantity: split },
+            { type: typeB, quantity: totalPerPath - split }
+          ];
+        } else if (State.currentWave >= 5) {
+          let t1 = ['Melee', 'Blade', 'Mace', 'Spear'][State.currentWave % 4];
           let t2 = ['Archer', 'Magic'][State.currentWave % 2];
           waveData.types = [
             { type: t1, quantity: Math.ceil(totalPerPath/2) },
             { type: t2, quantity: Math.floor(totalPerPath/2) }
           ];
         } else {
-          const baseType = ['Blade', 'Archer', 'Magic', 'Mace', 'Spear'][(State.currentWave - 1) % 5];
+          const baseType = ['Melee', 'Blade', 'Archer', 'Magic', 'Mace', 'Spear'][(State.currentWave - 1) % 6];
           waveData.types = [{ type: baseType, quantity: totalPerPath }];
         }
 
         State.currentWaveData = waveData;
         this.spawnQueue = [];
 
-        // Distribute EXCACT quantity of enemies per path
+        // Regular minions for every lane; the final wave adds the full mixed force while the ultimate boss occupies one lane.
         waveData.lanes.forEach(lane => {
           waveData.types.forEach(t => {
             for (let i = 0; i < t.quantity; i++) {
@@ -766,21 +916,38 @@
           });
         });
 
-        // Interleave the basic wave enemies
         this.spawnQueue.sort(() => Math.random() - 0.5);
 
-        // Calculate and add Boss Hero to the very end of the queue
-        if (isBossWave) {
-          let numBosses = Math.random() < 0.5 ? 1 : 2;
-          let bossLanes = [...waveData.lanes].sort(() => Math.random() - 0.5).slice(0, numBosses);
-          waveData.bossLanes = bossLanes; // Store for the UI indicator
+        // Boss Logic mapped with explicit Directional Awareness
+        let bossDirections = [];
+        if (isFinalWave) {
+          // Final Boss Override: One massive boss in a random single lane
+          let finalBossLane = waveData.lanes[Math.floor(Math.random() * waveData.lanes.length)];
+          waveData.bossLanes = [finalBossLane];
+          bossDirections.push(['WEST', 'EAST', 'NORTH', 'SOUTH'][finalBossLane]);
+          
+          let bossType = 'Knight'; // Easy
+          if (State.difficulty === 'Medium') bossType = 'Dragon';
+          if (State.difficulty === 'Hard') bossType = 'Priestess';
+
+          // Push the ultimate boss to the queue
+          this.spawnQueue.push({ type: bossType, lane: finalBossLane, isUltimate: true });
+        } else if (isBossWave) {
+          // Standard mid-game boss every 5th wave with a randomized archetype
+          let bossLanes = [...waveData.lanes].sort(() => Math.random() - 0.5).slice(0, 1);
+          waveData.bossLanes = bossLanes;
+          const bossPool = ['Melee', 'Blade', 'Archer', 'Magic'];
 
           bossLanes.forEach(lane => {
-            this.spawnQueue.push({ type: 'HeroEnemy', lane: lane });
+            bossDirections.push(['WEST', 'EAST', 'NORTH', 'SOUTH'][lane]);
+            const bossType = bossPool[Math.floor(Math.random() * bossPool.length)];
+            this.spawnQueue.push({ type: bossType, lane: lane, isBoss: true });
           });
         }
+        
+        waveData.bossDirections = bossDirections;
 
-        // Standardize spawn interval so wave density feels roughly the same
+        renderCSSArrows(waveData);
         this.spawnInterval = (State.difficulty === 'Hard' ? 0.35 : 0.6) / waveData.lanes.length;
         this.spawnTimer = 0;
       },
@@ -788,14 +955,12 @@
       update(dt) {
         if (State.waveState === 'prep') {
           State.prepTimer -= dt;
-          if (State.prepTimer <= 0) State.waveState = 'active';
+          if (State.prepTimer <= 0) { State.waveState = 'active'; clearCSSArrows(); }
           return;
         }
         if (this.spawnQueue.length > 0) {
           this.spawnTimer -= dt;
-          if (this.spawnTimer <= 0) {
-            this.spawnEnemy(); this.spawnTimer = this.spawnInterval;
-          }
+          if (this.spawnTimer <= 0) { this.spawnEnemy(); this.spawnTimer = this.spawnInterval; }
         } else if (enemies.length === 0) {
           if (State.currentWave < State.totalFlags) {
             State.currentWave++; updateHUD(); this.initWaveSetup();
@@ -808,20 +973,33 @@
         const spawnData = this.spawnQueue.shift();
 
         const hpMult = 1 + (State.currentWave * 0.25) + (State.difficulty === 'Hard' ? 0.5 : 0);
-        const speedMult = State.difficulty === 'Hard' ? 1.25 : 1.0;
-        const isHeroEnemy = spawnData.type === 'HeroEnemy';
+        let speedMult = State.difficulty === 'Medium' ? 0.8 : (State.difficulty === 'Hard' ? 1.0 : 0.5);
+
+        const isUltimate = spawnData.isUltimate;
+        const isBossEnemy = spawnData.isBoss || spawnData.type === 'HeroEnemy' || isUltimate;
         
-        let enemyType = isHeroEnemy ? 'Blade' : spawnData.type; 
-        // Massive health pool added for the Boss Hero
-        let enemyHp = isHeroEnemy ? (600 * hpMult + 300) : 25 * hpMult;
-        let enemyDamage = isHeroEnemy ? 25 : 5;
+        let enemyType = (spawnData.type === 'HeroEnemy') ? 'Blade' : spawnData.type; 
+        
+        // Massive stat bumps for the Ultimate Bosses
+        let enemyHp = 25 * hpMult;
+        let enemyDamage = 5;
+        let speed = 45 * speedMult;
+
+        if (isUltimate) {
+            enemyHp = 3500 * hpMult; // Insane health pool
+            enemyDamage = 100; // Instant death to lives basically
+            speed = 20 * speedMult; // Slow and menacing
+        } else if (isBossEnemy) {
+            enemyHp = 600 * hpMult + 300;
+            enemyDamage = 25;
+            speed = 35 * speedMult;
+        }
 
         enemies.push({
           type: enemyType, hp: enemyHp, maxHp: enemyHp,
-          speed: (isHeroEnemy ? 35 : 45) * speedMult, // Boss moves slightly slower
-          pathIdx: spawnData.lane, progress: 0,
+          speed: speed, pathIdx: spawnData.lane, progress: 0,
           x: PathEngine.spawnPoints[spawnData.lane].x, y: PathEngine.spawnPoints[spawnData.lane].y,
-          isHeroEnemy: isHeroEnemy, damage: enemyDamage
+          isHeroEnemy: isBossEnemy, isUltimate: isUltimate, damage: enemyDamage
         });
       }
     };
@@ -837,7 +1015,17 @@
         const ratio = e.progress / fullDist;
         
         if (ratio >= 1.0) {
-          State.lives--; updateHUD(); enemies.splice(i, 1);
+          // Adjust Life penalties based on Entity Class
+          let lifePenalty = 1;
+          if (e.isUltimate) {
+              lifePenalty = 7;
+          } else if (e.isHeroEnemy) {
+              lifePenalty = 3;
+          }
+            
+          State.lives -= lifePenalty; 
+          updateHUD(); 
+          enemies.splice(i, 1);
           if (State.lives <= 0) endGame(false);
           continue;
         }
@@ -884,7 +1072,7 @@
 
       for (let i = enemies.length - 1; i >= 0; i--) {
         if (enemies[i].hp <= 0) {
-          State.gold += enemies[i].isHeroEnemy ? 100 : 12; // Bonus gold for Boss
+          State.gold += enemies[i].isUltimate ? 500 : (enemies[i].isHeroEnemy ? 100 : 12);
           updateHUD(); enemies.splice(i, 1);
         }
       }
@@ -909,12 +1097,19 @@
       ctx.fillStyle = '#ff4d4d'; ctx.font = 'bold 14px sans-serif';
       ctx.fillText(`Lives: ${Math.max(0, State.lives)}`, cx, cy + 18);
 
-      // Node Plots Rendering & Placement Matrix Highlighting
       plots.forEach(p => {
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
         
         if (State.pendingUnit && !p.unit) {
-          ctx.fillStyle = 'rgba(52, 152, 219, 0.5)'; ctx.strokeStyle = '#3498db';
+          let heroDeployed = false;
+          if (State.pendingUnit.isHero) {
+            heroDeployed = plots.some(pl => pl.unit && pl.unit.isHero && pl.unit.type === State.pendingUnit.type);
+          }
+          if (heroDeployed) {
+            ctx.fillStyle = 'rgba(50,70,90,0.8)'; ctx.strokeStyle = '#c9a24b';
+          } else {
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.5)'; ctx.strokeStyle = '#3498db';
+          }
         } else if (State.pendingUnit && p.unit && !p.unit.isHero && p.unit.type === State.pendingUnit.type && p.unit.level < 5 && !State.pendingUnit.isHero) {
           ctx.fillStyle = 'rgba(46, 204, 113, 0.5)'; ctx.strokeStyle = '#2ecc71';
         } else if (State.sellMode && p.unit) {
@@ -926,7 +1121,6 @@
         ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
 
         if (p.unit) {
-          // Pass hasLongHair flag down to the rendering function
           drawStickman(ctx, p.x, p.y + 2, p.unit.type, p.unit.isHero, p.unit.gender, false, now, p.unit.hasLongHair);
           
           ctx.fillStyle = (p.unit.isHero || p.unit.level === 5) ? '#ffb300' : '#ffffff';
@@ -935,27 +1129,36 @@
         }
       });
 
-      // Animated Wave Warning Banners 
       if (State.waveState === 'prep' && State.currentWaveData) {
         ctx.save();
         const data = State.currentWaveData;
-        const bossWarning = data.isBossWave ? " ⚠️ + BOSS" : "";
-        const enemySummary = `PER PATH: ` + data.types.map(t => `${t.quantity}x ${t.type}`).join(' + ') + bossWarning;
+        
+        let titleText = `FLAG ${State.currentWave} INCOMING`;
+        let enemySummary = `PER PATH: ` + data.types.map(t => `${t.quantity}x ${t.type}`).join(' + ');
+        let borderColor = '#ffb300';
+        
+        // Dynamically insert explicit Directional awareness for the Bosses
+        if (data.isFinalWave) {
+            titleText = `FINAL BATTLE INCOMING!`;
+            let bossName = State.difficulty === 'Easy' ? 'GIGANTIC KNIGHT' : (State.difficulty === 'Medium' ? 'ELDER DRAGON' : 'DARK PRIESTESS');
+            enemySummary = `BEWARE THE ${bossName} FROM THE ${data.bossDirections[0]}!`;
+            borderColor = '#ff0000'; // Menacing red for the final wave
+        } else if (data.isBossWave) {
+            enemySummary += `  ⚠️ BOSS FROM ${data.bossDirections.join(' & ')}`;
+        }
         
         ctx.font = 'bold 22px sans-serif';
-        const titleText = `FLAG ${State.currentWave} INCOMING`;
         const tw = Math.max(ctx.measureText(titleText).width, ctx.measureText(enemySummary).width) + 80;
         const boxHeight = 85;
         const boxY = cy - 140; 
 
-        // Bordered Warning Panel
         ctx.fillStyle = 'rgba(20, 25, 30, 0.9)';
-        ctx.strokeStyle = '#ffb300';
+        ctx.strokeStyle = borderColor;
         ctx.lineWidth = 3;
         ctx.fillRect(cx - tw/2, boxY, tw, boxHeight);
         ctx.strokeRect(cx - tw/2, boxY, tw, boxHeight);
 
-        ctx.fillStyle = '#ffb300'; ctx.textAlign = 'center';
+        ctx.fillStyle = borderColor; ctx.textAlign = 'center';
         ctx.fillText(titleText, cx, boxY + 30);
         
         ctx.fillStyle = '#ffffff'; ctx.font = '16px sans-serif';
@@ -964,7 +1167,6 @@
         ctx.fillStyle = '#aaa'; ctx.font = '14px sans-serif';
         ctx.fillText(`Battle starting in ${Math.ceil(State.prepTimer)}s`, cx, boxY + 75);
 
-        // Animated Fabric Waving Flag
         const flagWave = Math.sin(now * 0.006) * 6;
         ctx.strokeStyle = '#c9a24b'; ctx.lineWidth = 4; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(cx - 35, boxY); ctx.lineTo(cx - 35, boxY - 55); ctx.stroke();
@@ -977,33 +1179,16 @@
         ctx.quadraticCurveTo(cx - 15, boxY - 42 + flagWave, cx - 33, boxY - 30);
         ctx.closePath();
         ctx.fill();
-
-        // Direction Arrows WITH Boss warning Skulls dynamically placed
-        data.lanes.forEach(laneIdx => {
-          ctx.save();
-          let ax = 0, ay = 0, arrowStr = "";
-          if (laneIdx === 0) { ax = 60; ay = cy; arrowStr = "➡️ ➡️"; ctx.textAlign = 'left'; }
-          if (laneIdx === 1) { ax = W - 60; ay = cy; arrowStr = "⬅️ ⬅️"; ctx.textAlign = 'right'; }
-          if (laneIdx === 2) { ax = cx; ay = 60; arrowStr = "⬇️"; ctx.textAlign = 'center'; }
-          if (laneIdx === 3) { ax = cx; ay = H - 140; arrowStr = "⬆️"; ctx.textAlign = 'center'; }
-          
-          let laneHasBoss = data.bossLanes && data.bossLanes.includes(laneIdx);
-          ctx.fillStyle = laneHasBoss ? '#ff0000' : '#ff4d4d'; 
-          ctx.font = laneHasBoss ? 'bold 30px sans-serif' : 'bold 24px sans-serif'; 
-          ctx.fillText(arrowStr + (laneHasBoss ? " 💀" : ""), ax, ay + 8);
-
-          ctx.fillStyle = '#ffffff'; ctx.font = '14px sans-serif';
-          ctx.fillText(enemySummary, laneIdx === 2 || laneIdx === 3 ? ax + 65 : ax, laneIdx === 2 || laneIdx === 3 ? ay + 5 : ay - 20);
-          ctx.restore();
-        });
         ctx.restore();
       }
 
-      // Enemies
       enemies.forEach(e => {
         ctx.save();
-        // Scale Boss Hero to look more intimidating
-        if (e.isHeroEnemy) {
+        if (e.isUltimate) {
+          ctx.translate(e.x, e.y);
+          ctx.scale(2.6, 2.6); // Massive 2.6x scale for the final boss
+          ctx.translate(-e.x, -e.y);
+        } else if (e.isHeroEnemy) {
           ctx.translate(e.x, e.y);
           ctx.scale(1.4, 1.4);
           ctx.translate(-e.x, -e.y);
@@ -1012,14 +1197,21 @@
         drawStickman(ctx, e.x, e.y, e.type, e.isHeroEnemy, 'male', true, now, e.isHeroEnemy);
         ctx.restore();
         
-        let hbWidth = e.isHeroEnemy ? 36 : 24;
-        let hbY = e.isHeroEnemy ? e.y - 32 : e.y - 20;
+        let hbWidth = e.isUltimate ? 50 : (e.isHeroEnemy ? 36 : 24);
+        let hbY = e.isUltimate ? e.y - 60 : (e.isHeroEnemy ? e.y - 32 : e.y - 20);
 
         ctx.fillStyle = '#000000'; ctx.fillRect(e.x - hbWidth/2, hbY, hbWidth, 4);
         ctx.fillStyle = '#2ecc71'; ctx.fillRect(e.x - hbWidth/2, hbY, hbWidth * (Math.max(0, e.hp) / e.maxHp), 4);
+        
+        // NEW BOSS QOL TAG
+        if (e.isHeroEnemy || e.isUltimate) {
+          ctx.fillStyle = '#ff0000';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText("BOSS", e.x, hbY - 8);
+        }
       });
 
-      // Projectiles
       projectiles.forEach(p => {
         ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r || 4, 0, Math.PI*2); ctx.fill();
       });
@@ -1039,15 +1231,14 @@
       }
       
       const isHero = btn.dataset.isHero === "true";
-      const cost = isHero ? 150 : 50;
+      const cost = isHero ? 150 : UnitDict[btn.dataset.type].cost;
       
-      // Prevent selection if button is disabled (e.g. hero already deployed)
       if (State.gold >= cost && !btn.disabled) {
         State.pendingUnit = {
           type: btn.dataset.type,
           isHero: isHero, gender: btn.dataset.gender,
           hasLongHair: btn.dataset.hasLongHair === "true",
-          heroName: btn.dataset.heroName, // Store specific hero name
+          heroName: btn.dataset.heroName,
           cost: cost, btn: btn
         };
         State.sellMode = false; updateHUD();
@@ -1079,13 +1270,12 @@
                 hasLongHair: State.pendingUnit.hasLongHair, color: baseStats.color,
                 range: baseStats.range * (isH ? 1.35 : 1.0), damage: baseStats.damage * (isH ? 2.5 : 1.0),
                 fireRate: baseStats.fireRate * (isH ? 0.75 : 1.0), atkType: baseStats.type, cooldown: 0, level: 1,
-                name: State.pendingUnit.heroName // Apply actual Name to Unit object
+                name: State.pendingUnit.heroName
               };
               State.pendingUnit = null; updateHUD();
             }
           } else if (clickedPlot.unit && clickedPlot.unit.type === State.pendingUnit.type) {
             
-            // Prevent standard from upgrading a Hero, OR a Hero from upgrading standard
             if (clickedPlot.unit.isHero || State.pendingUnit.isHero) {
               ui.actionHint.innerText = State.pendingUnit.isHero ? "Heroes cannot upgrade standard units!" : "Heroes cannot be leveled up!"; 
               ui.actionHint.style.color = '#ffb300';
@@ -1142,17 +1332,15 @@
 
       document.querySelectorAll('.unit-btn').forEach(btn => {
         const isHero = btn.dataset.isHero === "true";
-        const cost = isHero ? 150 : 50;
+        const cost = isHero ? 150 : UnitDict[btn.dataset.type].cost;
         
         let isDeployed = false;
-        // Check if the specific Hero Name is already on a plot
         if (isHero) {
           isDeployed = plots.some(p => p.unit && p.unit.isHero && p.unit.name === btn.dataset.heroName);
         }
 
         btn.disabled = State.gold < cost || isDeployed;
 
-        // Visual selection state
         if (State.pendingUnit && State.pendingUnit.btn === btn) btn.classList.add('active');
         else btn.classList.remove('active');
       });
