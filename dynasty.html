@@ -392,11 +392,19 @@
       'Magic': { color: '#64b5f6', range: 130, damage: 28, fireRate: 1.4, type: 'projectile', cost: 100 }
     };
 
-    // Alternate colors the final (Ultimate) boss may occasionally shift into -
-    // deliberately excludes any red or blue tone, since those are already the
-    // enemy-team and player-unit conventions elsewhere. `null` is included so
-    // the boss also drifts back to its own natural color some of the time.
-    const BOSS_COLOR_SHIFT_PALETTE = [null, '#2ecc71', '#f1c40f', '#e67e22', '#9b59b6', '#8e44ad', '#f39c12'];
+    // Random final-boss colors for each playthrough (excludes red/blue team colors).
+    const FINAL_BOSS_COLOR_PALETTE = ['#2ecc71', '#f1c40f', '#e67e22', '#9b59b6', '#8e44ad', '#f39c12'];
+
+    function getNaturalBossColor() {
+      if (State.difficulty === 'Easy') return '#bdc3c7';
+      if (State.difficulty === 'Medium') return '#c9762a';
+      return '#9b59b6';
+    }
+
+    function rollFinalBossColor() {
+      const pool = [...FINAL_BOSS_COLOR_PALETTE, getNaturalBossColor()];
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
 
     function drawStickman(ctx, x, y, type, isHero, gender, isEnemy, seedTime, hasLongHair, bossColorOverride) {
       ctx.save();
@@ -409,13 +417,10 @@
         color = '#c9a24b'; 
       }
       
-      // Override colors for the ultimate bosses. bossColorOverride (set from
-      // the enemy's own colorShiftTimer in updateEntities) lets the final
-      // boss occasionally shift to one of BOSS_COLOR_SHIFT_PALETTE instead;
-      // falls back to each boss's natural color the rest of the time.
-      if (type === 'Knight') color = bossColorOverride || '#bdc3c7'; // Silver/Steel
-      if (type === 'Gladiator') color = bossColorOverride || '#c9762a'; // Bronze/Copper
-      if (type === 'Priestess') color = bossColorOverride || '#9b59b6'; // Dark Magic Purple
+      // Ultimate bosses use one session color (rolled at game start).
+      if (type === 'Knight') color = bossColorOverride || '#bdc3c7';
+      if (type === 'Gladiator') color = bossColorOverride || '#c9762a';
+      if (type === 'Priestess') color = bossColorOverride || '#9b59b6';
       if (type === 'MagicHand') color = '#8e24aa'; // Magical violet hand
 
       ctx.strokeStyle = color;
@@ -573,7 +578,8 @@
       gold: 500, lives: 30, currentWave: 1, // SET TO 30 FOR ALL MODES
       isGameOver: false, isPausedForForfeit: false,
       pendingUnit: null, sellMode: false,   
-      waveState: 'prep', prepTimer: 5.0, currentWaveData: null
+      waveState: 'prep', prepTimer: 5.0, currentWaveData: null,
+      finalBossColor: null
     };
 
     // UI Nodes
@@ -813,6 +819,7 @@
       State.isPausedForForfeit = false;
       State.pendingUnit = null;
       State.sellMode = false;
+      State.finalBossColor = rollFinalBossColor();
       enemies = []; projectiles = [];
       ui.modal.classList.add('hidden');
       clearCSSArrows();
@@ -1028,7 +1035,7 @@
           speed: speed, pathIdx: spawnData.lane, progress: 0,
           x: PathEngine.spawnPoints[spawnData.lane].x, y: PathEngine.spawnPoints[spawnData.lane].y,
           isHeroEnemy: isBossEnemy, isUltimate: isUltimate, damage: enemyDamage,
-          colorOverride: null, colorShiftTimer: isUltimate ? (3 + Math.random() * 3) : 0
+          colorOverride: isUltimate ? State.finalBossColor : null
         });
       }
     };
@@ -1038,17 +1045,6 @@
 
       for (let i = enemies.length - 1; i >= 0; i--) {
         let e = enemies[i];
-
-        // The final (Ultimate) boss occasionally shifts to a new color from
-        // BOSS_COLOR_SHIFT_PALETTE (never red/blue), holding each pick for a
-        // few seconds before rolling again - see BOSS_COLOR_SHIFT_PALETTE.
-        if (e.isUltimate) {
-          e.colorShiftTimer -= dt;
-          if (e.colorShiftTimer <= 0) {
-            e.colorOverride = BOSS_COLOR_SHIFT_PALETTE[Math.floor(Math.random() * BOSS_COLOR_SHIFT_PALETTE.length)];
-            e.colorShiftTimer = 3 + Math.random() * 3;
-          }
-        }
 
         e.progress += e.speed * dt;
         const sp = PathEngine.spawnPoints[e.pathIdx];
