@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FBX Rig Viewer — Multi-Character Weapon Rig</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#0a0e14;
+    --panel:#111820;
+    --panel-2:#0d1319;
+    --line:#1e2733;
+    --line-soft:#161e27;
+    --amber:#ffb454;
+    --amber-dim:#8a6636;
+    --cyan:#4fd6e0;
+    --cyan-dim:#2c5c60;
+    --text:#e8edf2;
+    --text-dim:#6b7785;
+    --danger:#ff6b6b;
+    --ok:#7ee787;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background:var(--bg-void);
+    font-family:'JetBrains Mono', monospace;
+    color:var(--text);
+  }
+  #viewport{ position:fixed; inset:0; }
+  #viewport canvas{ display:block; }
+
+  .frame-corner{ position:fixed; width:22px; height:22px; pointer-events:none; z-index:5; opacity:.55; }
+  .fc-tl{ top:10px; left:10px; border-top:2px solid var(--amber); border-left:2px solid var(--amber); }
+  .fc-tr{ top:10px; right:10px; border-top:2px solid var(--amber); border-right:2px solid var(--amber); }
+  .fc-bl{ bottom:10px; left:10px; border-bottom:2px solid var(--amber); border-left:2px solid var(--amber); }
+  .fc-br{ bottom:10px; right:10px; border-bottom:2px solid var(--amber); border-right:2px solid var(--amber); }
+
+  #panel{
+    position:fixed; top:16px; left:16px; bottom:16px; width:320px;
+    background:rgba(17,24,32,.86);
+    backdrop-filter: blur(6px);
+    border:1px solid var(--line);
+    border-radius:2px;
+    display:flex; flex-direction:column;
+    z-index:10;
+    box-shadow:0 0 0 1px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.5);
+  }
+  #panelHead{ padding:14px 16px 12px 16px; border-bottom:1px solid var(--line); flex:0 0 auto; }
+  #panelHead .title{ font-size:13px; font-weight:700; letter-spacing:.14em; color:var(--amber); }
+  #panelHead .sub{ font-size:10px; color:var(--text-dim); letter-spacing:.08em; margin-top:3px; }
+
+  #panelBody{ flex:1 1 auto; overflow-y:auto; padding:4px 0 8px 0; }
+  #panelBody::-webkit-scrollbar{ width:6px; }
+  #panelBody::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+
+  .section{ border-bottom:1px solid var(--line-soft); padding:12px 16px 14px 16px; }
+  .section:last-child{ border-bottom:none; }
+  .section-label{
+    font-size:10px; letter-spacing:.16em; color:var(--cyan); font-weight:600;
+    display:flex; align-items:center; gap:8px; margin-bottom:10px;
+  }
+  .section-label .tick{ flex:1; height:1px; background:var(--line); }
+  .section-label .idx{ color:var(--text-dim); }
+
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .row:last-child{ margin-bottom:0; }
+  label.field{ font-size:10.5px; color:var(--text-dim); letter-spacing:.03em; }
+
+  .btn{
+    width:100%; text-align:left; background:var(--panel-2); color:var(--text);
+    border:1px solid var(--line); padding:9px 10px; font-family:inherit; font-size:11px;
+    letter-spacing:.03em; cursor:pointer; border-radius:2px; position:relative;
+  }
+  .btn:hover{ border-color:var(--amber-dim); color:var(--amber); }
+  .btn:active{ transform:translateY(1px); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.file-btn::after{ content:"›"; position:absolute; right:10px; top:8px; color:var(--text-dim); }
+  .btn small{ display:block; color:var(--text-dim); font-size:9px; margin-top:2px; letter-spacing:.02em; }
+
+  select{
+    width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line);
+    padding:7px 8px; font-family:inherit; font-size:11px; border-radius:2px;
+  }
+  select:disabled{ opacity:.4; }
+  select:focus{ outline:1px solid var(--amber-dim); }
+
+  .switch{ position:relative; width:32px; height:16px; flex:0 0 auto; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider-switch{
+    position:absolute; cursor:pointer; inset:0; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:9px; transition:.15s;
+  }
+  .slider-switch::before{
+    content:""; position:absolute; height:10px; width:10px; left:2px; top:2px;
+    background:var(--text-dim); border-radius:50%; transition:.15s;
+  }
+  .switch input:checked + .slider-switch{ border-color:var(--amber-dim); background:rgba(255,180,84,.08); }
+  .switch input:checked + .slider-switch::before{ transform:translateX(16px); background:var(--amber); }
+  .switch input:disabled + .slider-switch{ opacity:.35; }
+
+  .slider-line{ margin-bottom:9px; }
+  .slider-line:last-child{ margin-bottom:0; }
+  .slider-line .row{ margin-bottom:3px; }
+  .slider-line .val{ color:var(--amber); font-size:10.5px; min-width:38px; text-align:right; }
+
+  input[type=range]{ -webkit-appearance:none; width:100%; height:14px; background:transparent; cursor:pointer; }
+  input[type=range]::-webkit-slider-runnable-track{ height:2px; background:var(--line); border-radius:1px; }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; margin-top:-5px; width:12px; height:12px;
+    background:var(--amber); transform:rotate(45deg); border-radius:2px;
+    box-shadow:0 0 0 2px var(--bg-void), 0 0 0 3px var(--amber-dim);
+  }
+  input[type=range]::-moz-range-track{ height:2px; background:var(--line); border-radius:1px; }
+  input[type=range]::-moz-range-thumb{
+    width:12px; height:12px; background:var(--amber); border:none; transform:rotate(45deg); border-radius:2px;
+  }
+  input[type=range]:disabled{ opacity:.35; }
+
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+
+  #status{ flex:0 0 auto; border-top:1px solid var(--line); padding:10px 16px; font-size:9.5px; color:var(--text-dim); line-height:1.5; }
+  #status .dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-dim); margin-right:6px; }
+  #status .dot.ok{ background:var(--ok); box-shadow:0 0 6px var(--ok); }
+  #status .dot.err{ background:var(--danger); box-shadow:0 0 6px var(--danger); }
+
+  #log{ height:64px; overflow-y:auto; margin-top:8px; padding:8px; background:var(--panel-2); border:1px solid var(--line); font-size:9.5px; color:var(--text-dim); line-height:1.6; }
+  #log::-webkit-scrollbar{ width:5px; }
+  #log::-webkit-scrollbar-thumb{ background:var(--line); }
+  #log div{ white-space:pre-wrap; }
+  #log div.err{ color:var(--danger); }
+  #log div.ok{ color:var(--ok); }
+
+  .outliner{ max-height:150px; overflow-y:auto; margin-top:8px; border:1px solid var(--line); border-radius:2px; }
+  .outliner::-webkit-scrollbar{ width:5px; }
+  .outliner::-webkit-scrollbar-thumb{ background:var(--line); }
+  .outliner-row{
+    display:flex; align-items:center; justify-content:space-between; padding:7px 8px;
+    font-size:10.5px; border-bottom:1px solid var(--line-soft); cursor:pointer; color:var(--text-dim);
+  }
+  .outliner-row:last-child{ border-bottom:none; }
+  .outliner-row:hover{ color:var(--text); background:rgba(255,255,255,.03); }
+  .outliner-row.active{ color:var(--amber); background:rgba(255,180,84,.07); box-shadow:inset 2px 0 0 var(--amber); }
+  .outliner-row .name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .outliner-row .rm{ color:var(--text-dim); padding:0 4px; flex:0 0 auto; }
+  .outliner-row .rm:hover{ color:var(--danger); }
+  .outliner-empty{ padding:10px 8px; font-size:10px; color:var(--text-dim); text-align:center; }
+
+  .hint{ font-size:9.5px; color:var(--text-dim); line-height:1.55; margin-top:6px; }
+  .kbd{ display:inline-block; border:1px solid var(--line); border-radius:2px; padding:0 4px; color:var(--text); font-size:9px; }
+
+  .dropzone-hint{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(10,14,20,.72); z-index:20; pointer-events:none; }
+  .dropzone-hint.show{ display:flex; }
+  .dropzone-hint span{ border:2px dashed var(--amber); padding:28px 40px; font-size:13px; letter-spacing:.1em; color:var(--amber); }
+
+  input[type=file]{ display:none; }
+</style>
+</head>
+<body>
+
+<div id="viewport"></div>
+<div class="frame-corner fc-tl"></div>
+<div class="frame-corner fc-tr"></div>
+<div class="frame-corner fc-bl"></div>
+<div class="frame-corner fc-br"></div>
+<div class="dropzone-hint" id="dropHint"><span>DROP FBX FILE(S) TO LOAD</span></div>
+
+<div id="panel">
+  <div id="panelHead">
+    <div class="title">RIG // WEAPON ATTACH</div>
+    <div class="sub">MULTI-CHARACTER · TEXTURES · WALK RIG</div>
+  </div>
+
+  <div id="panelBody">
+
+    <div class="section">
+      <div class="section-label"><span class="idx">01</span> SOURCE <span class="tick"></span></div>
+      <button class="btn file-btn" id="btnLoadChar">Load character (.fbx)<small>Each click adds a new character — drag &amp; drop works too</small></button>
+      <input type="file" id="fileChar" accept=".fbx" multiple>
+      <div class="outliner" id="outliner"><div class="outliner-empty">No characters loaded yet</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="idx">02</span> TEXTURES <span class="tick"></span></div>
+      <button class="btn file-btn" id="btnLoadTextures" disabled>Load PNG folder for selected<small>Matches files by name to the textures the FBX references</small></button>
+      <input type="file" id="fileTextures" webkitdirectory directory multiple accept="image/*">
+      <div class="hint" id="textureHint">Select a character above first.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="idx">03</span> WEAPON <span class="tick"></span></div>
+      <div class="row">
+        <label class="field">Hold gun</label>
+        <label class="switch"><input type="checkbox" id="gunToggle" disabled><span class="slider-switch"></span></label>
+      </div>
+      <div style="height:9px;"></div>
+      <div class="row"><label class="field">Hand bone</label></div>
+      <select id="boneSelect" disabled><option value="">— select a character —</option></select>
+      <div style="height:9px;"></div>
+      <div class="row">
+        <label class="field">Show bone axes</label>
+        <label class="switch"><input type="checkbox" id="axesToggle" disabled><span class="slider-switch"></span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="idx">04</span> CALIBRATION <span class="tick"></span></div>
+      <div class="slider-line">
+        <div class="row"><label class="field">Position</label></div>
+        <div class="grid3">
+          <input type="range" id="posX" min="-0.5" max="0.5" step="0.001" value="0" disabled>
+          <input type="range" id="posY" min="-0.5" max="0.5" step="0.001" value="0" disabled>
+          <input type="range" id="posZ" min="-0.5" max="0.5" step="0.001" value="0" disabled>
+        </div>
+      </div>
+      <div class="slider-line">
+        <div class="row"><label class="field">Rotation</label></div>
+        <div class="grid3">
+          <input type="range" id="rotX" min="-180" max="180" step="1" value="0" disabled>
+          <input type="range" id="rotY" min="-180" max="180" step="1" value="0" disabled>
+          <input type="range" id="rotZ" min="-180" max="180" step="1" value="0" disabled>
+        </div>
+      </div>
+      <div class="slider-line">
+        <div class="row"><label class="field">Scale</label><span class="val" id="scaleVal">1.00</span></div>
+        <input type="range" id="scaleSlider" min="0.2" max="3" step="0.01" value="1" disabled>
+      </div>
+      <div style="height:4px;"></div>
+      <button class="btn" id="btnResetCal" style="text-align:center;" disabled>Reset calibration</button>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="idx">05</span> MOVEMENT <span class="tick"></span></div>
+      <div class="hint">
+        Select a character in SOURCE, then walk it with <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>.
+        Hold <span class="kbd">Shift</span> to run. Only the selected character responds to keys.
+        Leg/arm bones are posed procedurally from the rig — no baked animation clips involved.
+      </div>
+      <div style="height:9px;"></div>
+      <div class="slider-line">
+        <div class="row"><label class="field">Walk speed</label><span class="val" id="speedVal">1.6</span></div>
+        <input type="range" id="moveSpeedSlider" min="0.4" max="4" step="0.1" value="1.6">
+      </div>
+    </div>
+
+  </div>
+
+  <div id="status">
+    <div><span class="dot" id="statusDot"></span><span id="statusText">Waiting for a character…</span></div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fflate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------------------------------------------------------------
+  // logging / status helpers
+  // ---------------------------------------------------------------------
+  const logEl = document.getElementById('log');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  function log(msg, kind){
+    const d = document.createElement('div');
+    if (kind) d.className = kind;
+    const t = new Date().toLocaleTimeString([], {hour12:false});
+    d.textContent = '[' + t + '] ' + msg;
+    logEl.appendChild(d);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  function setStatus(text, kind){
+    statusText.textContent = text;
+    statusDot.className = 'dot' + (kind ? (' ' + kind) : '');
+  }
+
+  // ---------------------------------------------------------------------
+  // three.js scene setup
+  // ---------------------------------------------------------------------
+  const viewportEl = document.getElementById('viewport');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0e14);
+  scene.fog = new THREE.Fog(0x0a0e14, 10, 30);
+
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.05, 300);
+  camera.position.set(3.2, 2.1, 3.8);
+
+  const renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  viewportEl.appendChild(renderer.domElement);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 1.0, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 0.6;
+  controls.maxDistance = 20;
+  controls.maxPolarAngle = Math.PI * 0.94;
+  controls.update();
+
+  const hemi = new THREE.HemisphereLight(0x8fb4ff, 0x0a0e14, 0.55);
+  scene.add(hemi);
+  const key = new THREE.DirectionalLight(0xfff2df, 1.05);
+  key.position.set(4, 6, 3);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.near = 0.5;
+  key.shadow.camera.far = 30;
+  key.shadow.camera.left = -8; key.shadow.camera.right = 8;
+  key.shadow.camera.top = 8; key.shadow.camera.bottom = -8;
+  key.shadow.bias = -0.0004;
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0x4fd6e0, 0.35);
+  rim.position.set(-3, 2, -3);
+  scene.add(rim);
+
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(14, 48),
+    new THREE.MeshStandardMaterial({ color:0x0d1319, roughness:1, metalness:0 })
+  );
+  ground.rotation.x = -Math.PI/2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  const grid = new THREE.GridHelper(14, 56, 0x2c5c60, 0x161e27);
+  grid.material.opacity = 0.5;
+  grid.material.transparent = true;
+  scene.add(grid);
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // ---------------------------------------------------------------------
+  // procedural gun mesh (no external assets — built from primitives)
+  // local axes convention: +Z = barrel forward, +Y = up, grip hangs toward -Y
+  // ---------------------------------------------------------------------
+  function createGunMesh(){
+    const group = new THREE.Group();
+    group.name = 'ProceduralGun';
+
+    const metal = new THREE.MeshStandardMaterial({ color:0x2a2e35, roughness:0.35, metalness:0.75 });
+    const metalDark = new THREE.MeshStandardMaterial({ color:0x15171b, roughness:0.4, metalness:0.6 });
+    const grip = new THREE.MeshStandardMaterial({ color:0x1c1c1c, roughness:0.85, metalness:0.05 });
+    const accent = new THREE.MeshStandardMaterial({ color:0xffb454, roughness:0.4, metalness:0.5 });
+
+    const slide = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.045, 0.19), metal);
+    slide.position.set(0, 0.05, 0.03);
+    group.add(slide);
+
+    const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.012, 14), metalDark);
+    muzzle.rotation.x = Math.PI/2;
+    muzzle.position.set(0, 0.05, 0.125);
+    group.add(muzzle);
+
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.12), metalDark);
+    frame.position.set(0, 0.028, 0.0);
+    group.add(frame);
+
+    const gripMesh = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.1, 0.045), grip);
+    gripMesh.position.set(0, -0.03, -0.045);
+    gripMesh.rotation.x = -0.22;
+    group.add(gripMesh);
+
+    const mag = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, 0.032), metalDark);
+    mag.position.set(0, -0.082, -0.05);
+    mag.rotation.x = -0.22;
+    group.add(mag);
+
+    const guard = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.005, 8, 16, Math.PI * 1.15), metalDark);
+    guard.rotation.z = Math.PI;
+    guard.rotation.y = Math.PI/2;
+    guard.position.set(0, 0.006, -0.008);
+    group.add(guard);
+
+    const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.018, 0.006), metalDark);
+    trigger.position.set(0, 0.01, -0.01);
+    group.add(trigger);
+
+    const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.007, 0.008), accent);
+    rearSight.position.set(0, 0.075, -0.05);
+    group.add(rearSight);
+    const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.007, 0.006), accent);
+    frontSight.position.set(0, 0.075, 0.11);
+    group.add(frontSight);
+
+    group.traverse(o => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+    return group;
+  }
+
+  // ---------------------------------------------------------------------
+  // bone name heuristics
+  // ---------------------------------------------------------------------
+  const HAND_PATTERNS = [
+    /mixamorig.*right.*hand$/i, /^righthand$/i, /right.*hand$/i,
+    /hand.*[_.]?r$/i, /r[_.]?hand$/i, /hand_r$/i, /bip.*r.*hand/i
+  ];
+  const LIMB_PATTERNS = {
+    leftUpLeg:  [/mixamorig.*leftupleg$/i, /^leftupleg$/i, /left.*up.*leg$/i, /thigh_l$/i, /l_thigh$/i],
+    rightUpLeg: [/mixamorig.*rightupleg$/i, /^rightupleg$/i, /right.*up.*leg$/i, /thigh_r$/i, /r_thigh$/i],
+    leftLeg:    [/mixamorig.*leftleg$/i, /^leftleg$/i, /calf_l$/i, /l_calf$/i, /shin_l$/i],
+    rightLeg:   [/mixamorig.*rightleg$/i, /^rightleg$/i, /calf_r$/i, /r_calf$/i, /shin_r$/i],
+    leftArm:    [/mixamorig.*leftarm$/i, /^leftarm$/i, /upperarm_l$/i, /l_upperarm$/i],
+    rightArm:   [/mixamorig.*rightarm$/i, /^rightarm$/i, /upperarm_r$/i, /r_upperarm$/i]
+  };
+
+  function findBoneByPatterns(list, patterns){
+    for (const p of patterns){
+      const found = list.find(b => p.test(b.name));
+      if (found) return found;
+    }
+    return null;
+  }
+  function guessHandBone(list){ return findBoneByPatterns(list, HAND_PATTERNS); }
+  function detectLimbBones(list){
+    const limbs = {};
+    for (const role in LIMB_PATTERNS){
+      const bone = findBoneByPatterns(list, LIMB_PATTERNS[role]);
+      limbs[role] = bone ? { bone, bind:{ x:bone.rotation.x, y:bone.rotation.y, z:bone.rotation.z } } : null;
+    }
+    return limbs;
+  }
+
+  // ---------------------------------------------------------------------
+  // disposal helper
+  // ---------------------------------------------------------------------
+  function disposeObject(obj){
+    if (!obj) return;
+    obj.traverse(child => {
+      if (child.isMesh){
+        if (child.geometry) child.geometry.dispose();
+        if (child.material){
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach(m => {
+            for (const k in m){ if (m[k] && m[k].isTexture) m[k].dispose(); }
+            m.dispose();
+          });
+        }
+      }
+    });
+  }
+
+  function normalizeTransform(obj){
+    let box = new THREE.Box3().setFromObject(obj);
+    let size = box.getSize(new THREE.Vector3());
+    if (size.y > 0.0001){
+      const factor = 1.75 / size.y;
+      obj.scale.setScalar(factor);
+    }
+    box = new THREE.Box3().setFromObject(obj);
+    size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    obj.position.x -= center.x;
+    obj.position.z -= center.z;
+    obj.position.y -= box.min.y;
+  }
+
+  // ---------------------------------------------------------------------
+  // FBX parsing with texture-reference capture
+  // FBXLoader tries to fetch referenced PNGs over the network, which fails
+  // for local files with no server. We intercept TextureLoader.load so we
+  // can record which filenames were requested, then fill them in ourselves
+  // once the user supplies the matching image files.
+  // ---------------------------------------------------------------------
+  const fbxLoader = new THREE.FBXLoader();
+
+  function parseFbxCapturingTextures(buffer){
+    const requested = []; // { filename, texture }
+    const originalLoad = THREE.TextureLoader.prototype.load;
+    THREE.TextureLoader.prototype.load = function(url, onLoad){
+      const tex = new THREE.Texture();
+      const base = String(url).replace(/\\/g,'/').split('/').pop();
+      tex.name = base;
+      requested.push({ filename: base, texture: tex });
+      if (onLoad) setTimeout(() => onLoad(tex), 0);
+      return tex;
+    };
+    let obj;
+    try {
+      obj = fbxLoader.parse(buffer, '');
+    } finally {
+      THREE.TextureLoader.prototype.load = originalLoad;
+    }
+    return { obj, requested };
+  }
+
+  function markColorSpaceForColorMaps(root){
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach(m => {
+        ['map','emissiveMap'].forEach(k => {
+          if (m[k]) m[k].encoding = THREE.sRGBEncoding;
+        });
+        m.needsUpdate = true;
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // character registry
+  // ---------------------------------------------------------------------
+  let nextId = 1;
+  const characters = [];
+  let selectedId = null;
+
+  function getSelected(){ return characters.find(c => c.id === selectedId) || null; }
+
+  function defaultCalibration(){ return { pos:{x:0,y:0,z:0}, rot:{x:0,y:0,z:0}, scale:1 }; }
+
+  function applyCalibrationToChar(c){
+    if (!c) return;
+    c.gun.position.set(c.calibration.pos.x, c.calibration.pos.y, c.calibration.pos.z);
+    c.gun.rotation.set(
+      THREE.MathUtils.degToRad(c.calibration.rot.x),
+      THREE.MathUtils.degToRad(c.calibration.rot.y),
+      THREE.MathUtils.degToRad(c.calibration.rot.z)
+    );
+    c.gun.scale.setScalar(c.calibration.scale);
+  }
+
+  function setHandBoneForChar(c, name){
+    const found = c.bones.find(b => b.name === name);
+    if (!found) return;
+    if (c.handBone && c.gun.parent === c.handBone) c.handBone.remove(c.gun);
+    if (c.handBone && c.boneAxes.parent === c.handBone) c.handBone.remove(c.boneAxes);
+    c.handBone = found;
+    c.handBone.add(c.gun);
+    c.handBone.add(c.boneAxes);
+    applyCalibrationToChar(c);
+  }
+
+  function removeCharacter(id){
+    const idx = characters.findIndex(c => c.id === id);
+    if (idx === -1) return;
+    const c = characters[idx];
+    scene.remove(c.root);
+    disposeObject(c.root);
+    disposeObject(c.gun);
+    if (c.boneAxes){ c.boneAxes.geometry.dispose(); c.boneAxes.material.dispose(); }
+    characters.splice(idx, 1);
+    if (selectedId === id){
+      selectedId = characters.length ? characters[characters.length-1].id : null;
+    }
+    rebuildOutliner();
+    refreshSelectionUI();
+    log('Removed "' + c.name + '".');
+  }
+
+  // ---------------------------------------------------------------------
+  // UI references
+  // ---------------------------------------------------------------------
+  const outlinerEl   = document.getElementById('outliner');
+  const boneSelect   = document.getElementById('boneSelect');
+  const gunToggle    = document.getElementById('gunToggle');
+  const axesToggle   = document.getElementById('axesToggle');
+  const btnLoadTextures = document.getElementById('btnLoadTextures');
+  const fileTextures = document.getElementById('fileTextures');
+  const textureHint  = document.getElementById('textureHint');
+  const btnResetCal  = document.getElementById('btnResetCal');
+  const moveSpeedSlider = document.getElementById('moveSpeedSlider');
+  const speedVal = document.getElementById('speedVal');
+
+  const posX = document.getElementById('posX');
+  const posY = document.getElementById('posY');
+  const posZ = document.getElementById('posZ');
+  const rotX = document.getElementById('rotX');
+  const rotY = document.getElementById('rotY');
+  const rotZ = document.getElementById('rotZ');
+  const scaleSlider = document.getElementById('scaleSlider');
+  const scaleVal = document.getElementById('scaleVal');
+  const calInputs = [posX,posY,posZ,rotX,rotY,rotZ,scaleSlider];
+
+  moveSpeedSlider.addEventListener('input', () => { speedVal.textContent = parseFloat(moveSpeedSlider.value).toFixed(1); });
+
+  function setCalibrationControlsEnabled(enabled){
+    calInputs.forEach(el => el.disabled = !enabled);
+    btnResetCal.disabled = !enabled;
+  }
+  function setWeaponControlsEnabled(enabled){
+    boneSelect.disabled = !enabled;
+    gunToggle.disabled = !enabled;
+    axesToggle.disabled = !enabled;
+  }
+
+  function rebuildOutliner(){
+    outlinerEl.innerHTML = '';
+    if (!characters.length){
+      outlinerEl.innerHTML = '<div class="outliner-empty">No characters loaded yet</div>';
+      return;
+    }
+    characters.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'outliner-row' + (c.id === selectedId ? ' active' : '');
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'name';
+      nameSpan.textContent = c.name;
+      const rm = document.createElement('span');
+      rm.className = 'rm';
+      rm.textContent = '✕';
+      rm.title = 'Remove';
+      rm.addEventListener('click', ev => { ev.stopPropagation(); removeCharacter(c.id); });
+      row.appendChild(nameSpan);
+      row.appendChild(rm);
+      row.addEventListener('click', () => { selectedId = c.id; rebuildOutliner(); refreshSelectionUI(); });
+      outlinerEl.appendChild(row);
+    });
+  }
+
+  function rebuildBoneSelectFor(c){
+    boneSelect.innerHTML = '';
+    if (!c || !c.bones.length){
+      boneSelect.appendChild(new Option('— no bones found —', ''));
+      return;
+    }
+    c.bones.forEach(b => boneSelect.appendChild(new Option(b.name, b.name)));
+    boneSelect.value = c.handBone ? c.handBone.name : '';
+  }
+
+  function refreshSelectionUI(){
+    const c = getSelected();
+    if (!c){
+      rebuildBoneSelectFor(null);
+      setWeaponControlsEnabled(false);
+      setCalibrationControlsEnabled(false);
+      gunToggle.checked = false;
+      axesToggle.checked = false;
+      btnLoadTextures.disabled = true;
+      textureHint.textContent = 'Select a character above first.';
+      return;
+    }
+    rebuildBoneSelectFor(c);
+    setWeaponControlsEnabled(true);
+    setCalibrationControlsEnabled(true);
+    gunToggle.checked = c.gunVisible;
+    axesToggle.checked = c.boneAxes.visible;
+    posX.value = c.calibration.pos.x; posY.value = c.calibration.pos.y; posZ.value = c.calibration.pos.z;
+    rotX.value = c.calibration.rot.x; rotY.value = c.calibration.rot.y; rotZ.value = c.calibration.rot.z;
+    scaleSlider.value = c.calibration.scale; scaleVal.textContent = c.calibration.scale.toFixed(2);
+    btnLoadTextures.disabled = false;
+    textureHint.textContent = 'Selected: ' + c.name + ' — ' + c.textureRequests.length + ' texture reference(s) found in file.';
+  }
+
+  boneSelect.addEventListener('change', () => {
+    const c = getSelected();
+    if (c && boneSelect.value) setHandBoneForChar(c, boneSelect.value);
+  });
+
+  gunToggle.addEventListener('change', () => {
+    const c = getSelected();
+    if (!c) return;
+    if (!c.handBone){
+      log('No hand bone selected for "' + c.name + '" — pick one under WEAPON.', 'err');
+      gunToggle.checked = false;
+      return;
+    }
+    c.gunVisible = gunToggle.checked;
+    c.gun.visible = c.gunVisible;
+  });
+
+  axesToggle.addEventListener('change', () => {
+    const c = getSelected();
+    if (!c) return;
+    c.boneAxes.visible = axesToggle.checked;
+  });
+
+  calInputs.forEach(el => el.addEventListener('input', () => {
+    const c = getSelected();
+    if (!c) return;
+    c.calibration.pos.x = parseFloat(posX.value);
+    c.calibration.pos.y = parseFloat(posY.value);
+    c.calibration.pos.z = parseFloat(posZ.value);
+    c.calibration.rot.x = parseFloat(rotX.value);
+    c.calibration.rot.y = parseFloat(rotY.value);
+    c.calibration.rot.z = parseFloat(rotZ.value);
+    c.calibration.scale = parseFloat(scaleSlider.value);
+    scaleVal.textContent = c.calibration.scale.toFixed(2);
+    applyCalibrationToChar(c);
+  }));
+
+  btnResetCal.addEventListener('click', () => {
+    const c = getSelected();
+    if (!c) return;
+    c.calibration = defaultCalibration();
+    refreshSelectionUI();
+    applyCalibrationToChar(c);
+    log('Calibration reset for "' + c.name + '".');
+  });
+
+  // ---------------------------------------------------------------------
+  // loading: character (repeatable — adds rather than replaces)
+  // ---------------------------------------------------------------------
+  function loadCharacterFromBuffer(buffer, filename){
+    let parsed;
+    try {
+      parsed = parseFbxCapturingTextures(buffer);
+    } catch (err){
+      log('Failed to parse "' + filename + '": ' + err.message, 'err');
+      return;
+    }
+    const root = parsed.obj;
+    const bones = [];
+    root.traverse(child => {
+      if (child.isMesh){ child.castShadow = true; child.receiveShadow = true; }
+      if (child.isBone) bones.push(child);
+    });
+
+    normalizeTransform(root);
+    root.position.x += characters.length * 1.4;
+
+    const gun = createGunMesh();
+    gun.visible = false;
+    const boneAxes = new THREE.AxesHelper(0.15);
+    boneAxes.visible = false;
+
+    const c = {
+      id: nextId++,
+      name: filename,
+      root, bones,
+      handBone: null,
+      gun, gunVisible:false,
+      boneAxes,
+      calibration: defaultCalibration(),
+      limbs: detectLimbBones(bones),
+      textureRequests: parsed.requested,
+      walkPhase: 0,
+      walkBlend: 0
+    };
+
+    scene.add(root);
+    characters.push(c);
+
+    const guess = guessHandBone(bones);
+    if (guess){
+      setHandBoneForChar(c, guess.name);
+      log('"' + filename + '" — auto-detected hand bone: ' + guess.name, 'ok');
+    } else if (bones.length){
+      log('"' + filename + '" — could not auto-detect a hand bone (' + bones.length + ' bones found).', 'err');
+    } else {
+      log('"' + filename + '" has no skeleton — weapon attach and walking need a rigged bone.', 'err');
+    }
+
+    const limbCount = Object.values(c.limbs).filter(Boolean).length;
+    log('"' + filename + '" — walk rig found ' + limbCount + '/6 limb bones.', limbCount ? 'ok' : 'err');
+
+    if (c.textureRequests.length){
+      log('"' + filename + '" references ' + c.textureRequests.length + ' texture file(s) — use TEXTURES to load the matching PNG folder.');
+    }
+
+    selectedId = c.id;
+    rebuildOutliner();
+    refreshSelectionUI();
+    setStatus(characters.length + ' character(s) in scene', 'ok');
+  }
+
+  // ---------------------------------------------------------------------
+  // texture folder loading (matches uploaded files to captured references)
+  // ---------------------------------------------------------------------
+  function applyTextureFolder(c, fileList){
+    const files = Array.from(fileList).filter(f => /\.(png|jpg|jpeg|webp)$/i.test(f.name));
+    if (!files.length){
+      log('No image files found in that folder.', 'err');
+      return;
+    }
+    const byBase = new Map();
+    files.forEach(f => {
+      const base = f.name.toLowerCase();
+      if (!byBase.has(base)) byBase.set(base, f);
+    });
+
+    let matched = 0;
+    c.textureRequests.forEach(req => {
+      const base = req.filename.toLowerCase();
+      const file = byBase.get(base);
+      if (!file) return;
+      matched++;
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        req.texture.image = img;
+        req.texture.needsUpdate = true;
+        URL.revokeObjectURL(url);
+        markColorSpaceForColorMaps(c.root);
+      };
+      img.onerror = () => log('Could not decode image: ' + file.name, 'err');
+      img.src = url;
+    });
+
+    log('"' + c.name + '" — matched ' + matched + '/' + c.textureRequests.length + ' referenced texture(s) from ' + files.length + ' uploaded image(s).', matched ? 'ok' : 'err');
+    textureHint.textContent = 'Selected: ' + c.name + ' — ' + matched + '/' + c.textureRequests.length + ' texture(s) matched.';
+  }
+
+  // ---------------------------------------------------------------------
+  // file dialog + drag&drop wiring
+  // ---------------------------------------------------------------------
+  const fileChar = document.getElementById('fileChar');
+  document.getElementById('btnLoadChar').addEventListener('click', () => fileChar.click());
+  fileChar.addEventListener('change', (e) => {
+    Array.from(e.target.files).forEach(f => {
+      const reader = new FileReader();
+      reader.onload = ev => loadCharacterFromBuffer(ev.target.result, f.name);
+      reader.onerror = () => log('Could not read file: ' + f.name, 'err');
+      reader.readAsArrayBuffer(f);
+    });
+    fileChar.value = '';
+  });
+
+  btnLoadTextures.addEventListener('click', () => fileTextures.click());
+  fileTextures.addEventListener('change', (e) => {
+    const c = getSelected();
+    if (!c){ log('Select a character before loading textures.', 'err'); return; }
+    if (!e.target.files.length) return;
+    applyTextureFolder(c, e.target.files);
+    fileTextures.value = '';
+  });
+
+  const dropHint = document.getElementById('dropHint');
+  let dragDepth = 0;
+  ['dragenter','dragover'].forEach(evt => window.addEventListener(evt, e => {
+    e.preventDefault(); dragDepth++; dropHint.classList.add('show');
+  }));
+  window.addEventListener('dragleave', e => {
+    e.preventDefault(); dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) dropHint.classList.remove('show');
+  });
+  window.addEventListener('drop', e => {
+    e.preventDefault();
+    dragDepth = 0;
+    dropHint.classList.remove('show');
+    const files = Array.from(e.dataTransfer.files || []).filter(f => /\.fbx$/i.test(f.name));
+    if (!files.length){ log('Dropped file(s) were not .fbx — ignored.', 'err'); return; }
+    files.forEach(f => {
+      const reader = new FileReader();
+      reader.onload = ev => loadCharacterFromBuffer(ev.target.result, f.name);
+      reader.readAsArrayBuffer(f);
+    });
+  });
+
+  // ---------------------------------------------------------------------
+  // movement + procedural walk rig
+  // ---------------------------------------------------------------------
+  const keys = {};
+  const MOVE_CODES = ['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight'];
+  window.addEventListener('keydown', e => { if (MOVE_CODES.includes(e.code)){ keys[e.code] = true; e.preventDefault(); } });
+  window.addEventListener('keyup',   e => { if (MOVE_CODES.includes(e.code)){ keys[e.code] = false; e.preventDefault(); } });
+
+  function lerpAngle(a, b, t){
+    let diff = ((b - a + Math.PI) % (Math.PI*2) + Math.PI*2) % (Math.PI*2) - Math.PI;
+    return a + diff * t;
+  }
+
+  function setLimbRotation(entry, offsetX){
+    if (!entry) return;
+    entry.bone.rotation.x = entry.bind.x + offsetX;
+    entry.bone.rotation.y = entry.bind.y;
+    entry.bone.rotation.z = entry.bind.z;
+  }
+
+  function applyWalkPose(c){
+    const L = c.limbs;
+    const phase = c.walkPhase;
+    const blend = c.walkBlend;
+    const hipAmp = 0.55, kneeAmp = 0.9;
+    let armAmpL = 0.42, armAmpR = 0.42;
+
+    if (c.gunVisible && c.handBone){
+      if (/right/i.test(c.handBone.name)) armAmpR *= 0.15;
+      else if (/left/i.test(c.handBone.name)) armAmpL *= 0.15;
+    }
+
+    setLimbRotation(L.leftUpLeg,  Math.sin(phase) * hipAmp * blend);
+    setLimbRotation(L.rightUpLeg, Math.sin(phase + Math.PI) * hipAmp * blend);
+    setLimbRotation(L.leftLeg,  Math.max(0, -Math.sin(phase + 0.6)) * kneeAmp * blend);
+    setLimbRotation(L.rightLeg, Math.max(0, -Math.sin(phase + Math.PI + 0.6)) * kneeAmp * blend);
+    setLimbRotation(L.leftArm,  Math.sin(phase + Math.PI) * armAmpL * blend);
+    setLimbRotation(L.rightArm, Math.sin(phase) * armAmpR * blend);
+  }
+
+  function updateMovement(delta){
+    const baseSpeed = parseFloat(moveSpeedSlider.value);
+    const running = !!(keys['ShiftLeft'] || keys['ShiftRight']);
+
+    characters.forEach(c => {
+      let mx = 0, mz = 0;
+      if (c.id === selectedId){
+        if (keys['KeyW']) mz -= 1;
+        if (keys['KeyS']) mz += 1;
+        if (keys['KeyA']) mx -= 1;
+        if (keys['KeyD']) mx += 1;
+      }
+      const len = Math.hypot(mx, mz);
+      const moving = len > 0.0001;
+
+      if (moving){
+        mx /= len; mz /= len;
+        const v = baseSpeed * (running ? 1.7 : 1) * delta;
+        c.root.position.x += mx * v;
+        c.root.position.z += mz * v;
+        const targetYaw = Math.atan2(mx, mz);
+        c.root.rotation.y = lerpAngle(c.root.rotation.y, targetYaw, Math.min(1, delta * 10));
+        c.walkPhase += delta * (running ? 16 : 10);
+      }
+      c.walkBlend += ((moving ? 1 : 0) - c.walkBlend) * Math.min(1, delta * 8);
+
+      if (c.limbs) applyWalkPose(c);
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // render loop
+  // ---------------------------------------------------------------------
+  const clock = new THREE.Clock();
+  function animate(){
+    requestAnimationFrame(animate);
+    const delta = Math.min(clock.getDelta(), 0.05);
+    updateMovement(delta);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  log('Ready. Load one or more rigged .fbx characters to begin.');
+})();
+</script>
+</body>
+</html>
