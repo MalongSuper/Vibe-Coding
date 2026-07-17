@@ -1,0 +1,192 @@
+Create a fully playable, single‑file web game titled "Attack on Tide" using HTML5 Canvas, CSS, and JavaScript.
+Output: ONE SINGLE index.html file containing everything.
+
+================================================================================
+GAME OVERVIEW
+================================================================================
+- Genre: lane‑defence, inspired by Plants vs. Zombies.
+- 5 lanes × 10 grid columns.
+- Defend your farm from waves of historically themed soldiers.
+- Two resources: Buns (steamed buns) and Blue Sacred Flames.
+- 8 hero units, 5 power‑up cards, last‑resort Spike Rollers.
+- 6 eras/stages, all unlocked from the start.
+- Strict M.U.G.E.N. art style for all characters.
+
+================================================================================
+GRID, LANES, AND POSITIONING
+================================================================================
+- 5 horizontal lanes, each with 10 grid slots (columns 1 to 10).
+- Column 1 = leftmost (player base), column 10 = rightmost (enemy spawn).
+- Enemies move right to left.
+- A Spike Roller sits in column 1 of every lane.
+- Player units can be placed only on empty cells in columns 2–10.
+- CRITICAL PLACEMENT RULE: The game must NOT prevent placing a unit on a cell just because an enemy is in the lane ahead. Only block placement if the exact cell is occupied by an enemy or another unit. (Like PvZ: you can place a plant right in front of a zombie.)
+- EXCEPTION for Spikeweed: Spikeweed CAN be placed on a cell currently occupied by an enemy. It triggers instantly, killing that enemy and then disappearing.
+
+================================================================================
+RESOURCES
+================================================================================
+1. Buns (steamed buns)
+   - Start: 50 buns.
+   - Earned by Farmers (see units) – every 10 sec a floating bun appears above a random lane; click to collect, vanishes after 5 sec.
+   - Spent on hero units.
+
+2. Blue Sacred Flames
+   - Start: 0.
+   - Earned by defeating any UNIQUE enemy (i.e., not basic Bronze/Silver/Gold/Star/BambooJumper/SwordShield). Each unique enemy drops a blue flame orb worth 50 flames, floating for 5 sec, click to collect.
+   - Spent on power‑up cards.
+
+================================================================================
+PLAYER UNITS (Heroes)
+================================================================================
+All placed from a card deck onto a grid cell. Cooldown is global per card.
+
+  Farmer          | Cost 0   | CD 5s  | Resource generator: 25 buns every 10s. No attack. Available instantly at stage start (no initial cooldown).
+  Shield Bearer   | Cost 50  | CD 5s  | Very high HP. Blocks movement; enemies must destroy it.
+  Single Archer   | Cost 100 | CD 5s  | Fires one arrow per 1.5s down lane, medium damage.
+  Double Archer   | Cost 200 | CD 5s  | Fires two arrows per 1.5s, medium damage each.
+  Poison Dagger   | Cost 175 | CD 5s  | Throws dagger every 2s; slows target 3s, reveals invisible enemies 4s, low damage.
+  Spikeweed Trap  | Cost 100 | CD 15s | Hidden trap. Instant‑kills first enemy that steps on it (or placed on it). If enemy is Female Rider (see enemies), removes bike, no crash damage. Trap disappears after activation.
+  Mine            | Cost 25  | CD 25s | Takes 15s to arm (visual: small mound → red dot). Armed mine instantly kills first enemy that walks over it.
+  Explosion       | Cost 150 | CD 40s | Cherry Bomb. Detonates after 0.8s, killing ALL enemies in a 3×3 area (3 columns wide × 3 lanes tall, centred on placement cell).
+
+Placement rules: only empty cells (except Spikeweed can be placed on enemy). After first Farmer placed, all other cards become available. Cooldowns shown on cards.
+
+================================================================================
+POWER‑UP CARDS
+================================================================================
+Activated with Blue Sacred Flames. No buns needed. Each has its own cooldown.
+
+  Purple Thunder    | Cost 100 flames | CD 30s | Instantly kills all enemies (lightning).
+  Extinguish Fire   | Cost 100 flames | CD 30s | Instantly kills all enemies (water wave).
+  Ice               | Cost 100 flames | CD 30s | Freezes all enemies 0.5s, then shatters them.
+  The Chains        | Cost 50 flames  | CD 20s | Immobilises ALL enemies on screen for 5 seconds.
+  Pushing Hand      | Cost 50 flames  | CD 20s | Pushes ALL enemies back to column 10.
+
+All five cards are purple with distinct icons. Cooldowns displayed.
+
+================================================================================
+SPIKE ROLLER (Last‑Resort)
+================================================================================
+- Each lane has a Spike Roller in column 1.
+- If an enemy reaches column 1, roller activates: rolls right, kills all enemies in that lane, then destroyed for rest of stage.
+- If enemy reaches column 1 and roller is already used, lose 1 life (start with 3 lives). That enemy removed.
+
+================================================================================
+WAVES, DIFFICULTY, AND PREPARATION TIME
+================================================================================
+- 30‑SECOND PREPARATION: After stage starts, first enemy wave does NOT spawn for exactly 30 seconds. No visual countdown is shown; the player simply has 30 seconds to place units freely.
+- After 30s, normal wave logic begins.
+- Difficulty: Easy = 1 Major Wave, Medium = 2, Hard = 3.
+- Major Waves end with a Star Soldier boss.
+- Wave composition:
+  * First waves: Bronze Soldiers only.
+  * Later waves add tougher basics and current‑era special enemies.
+  * On Medium/Hard, Silver/Gold appear much earlier.
+  * Each wave has more enemies and tougher ratio than previous.
+- Previous‑era specials can appear in current stage with a chance:
+  * Easy: 15%, Medium: 30%, Hard: 45% per wave.
+  * If triggered, one random special from any previous era is added to the wave.
+
+================================================================================
+ENEMY TYPES (ALL MUST BE M.U.G.E.N. STYLE)
+================================================================================
+All enemies: chibi, NO eyes, simple open mouth, walking animation (min 4 frames).
+Death animation: face‑down, lying flat, then fade.
+
+--- BASIC SOLDIERS (appear in every era) ---
+  Bronze Soldier (spear)    - Low toughness
+  Silver Soldier (spear)    - Medium toughness, slightly faster
+  Gold Soldier (spear)      - High toughness
+  Star Soldier (boss)       - Very high toughness, red flag on helmet. Only in Major Waves.
+  Silver Bamboo Jumper      - Available from Stage 2. Jumps over first unit encountered (blocked by Shield Bearer). Holds bamboo pole.
+  Gold Sword & Shield       - Available from Stage 2. Extremely high toughness, blocks 30% front damage.
+
+  SPEAR HOLD: All spear soldiers (Bronze, Silver, Gold, Star) must hold the spear HORIZONTALLY with both hands, across the body.
+
+--- ERA‑SPECIAL ENEMIES ---
+Stage 1 – Tensei Era: no special enemies.
+
+Stage 2 – Greek Era:
+  Wrestler – Runs fast, then stops in lane when adjacent to a player unit. Stays there as obstacle. High HP.
+  Mantyr Queen – Drains 2 buns/sec while alive. Low toughness.
+
+Stage 3 – Medieval Era:
+  Cannon – Spawns at col10, immobile. Fires cannonball every 5s, destroys first unit hit.
+  BlakeMan – Fast speed, medium toughness, melee damage.
+
+Stage 4 – Warfare Era:
+  Ninja – Invisible. Revealed by Poison Dagger (4s). Upon reveal, spawns 2 new invisible Ninjas in random other lanes. Low HP.
+  Samurai – Extremely high toughness, dual blades, melee.
+  Chinese Martial Girl – Red qipao, 65% dodge against targeted attacks.
+
+Stage 5 – Robotic Era:
+  Sentinel – Occupies 2 cells, slow, attacks units in own and adjacent lanes. Very tough. Cannot be insta‑killed by Spikeweed/Explosion (takes double dmg instead).
+  Female Rider – Motorcycle, very fast. Crashes at first unit/col1, dealing 3×3 area damage. Then walks normally (medium toughness). Spikeweed removes bike instantly, no crash.
+
+Stage 6 – Hybrid Era:
+  Underworld Dog – Red dog‑like soldier, hopping animation, medium toughness.
+  Beautiful Female Witch – Flies over all ground units. Archers/Daggers can hit her. Medium toughness.
+  Dragon – Two‑legged, walks. Extremely tough (Sentinel level). Spills fire (damage) or ice (slow) in its lane every 6s.
+
+================================================================================
+STAGES AND THEMING
+================================================================================
+- 6 stages, ALL UNLOCKED from the start.
+- Backgrounds must match the era:
+  1. Tensei: Rice fields, wooden fences.
+  2. Greek: Marble columns, olive trees.
+  3. Medieval: Stone castles, cobblestones.
+  4. Warfare: Trenches, barbed wire.
+  5. Robotic: Scrap metal, circuits.
+  6. Hybrid: Chaotic mix of all.
+
+================================================================================
+MAIN MENU UI
+================================================================================
+- Animated title "Attack on Tide" (bounce/glow).
+- Play button → stage selection (all 6 stages visible, selectable).
+- Almanac button → two tabs (Heroes / Enemies), each entry MUST SHOW THE CHARACTER'S VISUAL APPEARANCE (sprite/card art) alongside stats.
+- How to Play button → overlay explaining controls.
+
+================================================================================
+VISUAL & ANIMATION SPECS (STRICT M.U.G.E.N. STYLE)
+================================================================================
+- All characters: chibi proportions, NO EYES, open mouth, cartoonish.
+- Walking animations: at least 4 frames, smooth.
+- Death: face‑down, lie flat, fade.
+- Spear soldiers hold spear HORIZONTALLY.
+- Projectiles, floating buns, flames, power‑up effects as described.
+- No external images; all graphics drawn on Canvas (or CSS), hand‑drawn look.
+
+================================================================================
+TECHNICAL REQUIREMENTS
+================================================================================
+- Single index.html file, all CSS/JS inline.
+- Canvas for game world, DOM for UI if needed.
+- requestAnimationFrame loop, delta time, 60fps.
+- Mouse & touch input.
+- Canvas scales to 16:9, min 960×540.
+- State management: lives, buns, flames, cooldowns, waves, etc.
+- No persistent saving.
+
+================================================================================
+IMPLEMENTATION CHECKLIST
+================================================================================
+[ ] 5×10 grid with correct placement logic (cells ahead of enemy are placeable; only occupied cell blocked, Spikeweed exception).
+[ ] 30‑second preparation time, no visual timer.
+[ ] Bun collection (floating, 5s vanish).
+[ ] Blue Sacred Flame drops from unique enemies, 5s collection.
+[ ] All 8 units fully functional with correct costs/cooldowns.
+[ ] Mine arming (15s, visual), Explosion 3×3.
+[ ] Spikeweed can be placed on enemy (instant kill); kills bike off Rider.
+[ ] 5 power‑up cards with flame costs, cooldowns, effects.
+[ ] Spike Roller per lane, automatic, lane wipe.
+[ ] Wave system, Major Waves, Star Soldier, difficulty.
+[ ] All basic soldiers with horizontal spear, proper animation.
+[ ] All era‑specific enemies implemented exactly, with death animations.
+[ ] Previous‑era appearance chance (15/30/45%).
+[ ] Stage backgrounds per era.
+[ ] Main menu with animated title, unlocked stage selection, Almanac with character visuals, How‑to‑play.
+[ ] M.U.G.E.N. style enforced everywhere (no eyes, etc.).
+[ ] Single, working index.html.
