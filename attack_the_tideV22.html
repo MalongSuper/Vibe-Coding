@@ -1,0 +1,1385 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attack The Tide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=MedievalSharp&family=Palatino+Linotype,serif&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #1c140e;
+      --bg-panel: #f2e6d0;
+      --bg-panel-dark: #3a2e2b;
+      --panel-border: #6d4c41;
+      --accent: #8d6e63;
+      --accent2: #a1887f;
+      --accent-soft: rgba(141, 110, 99, 0.2);
+      --gold: #b58d3d;
+      --danger: #d32f2f;
+      --success: #388e3c;
+      --text-dark: #2c1e1a;
+      --text-light: #f5efe6;
+      --wood-gradient: linear-gradient(135deg, #5d4037, #3e2723);
+      --parchment-gradient: linear-gradient(180deg, #f5efe6, #e4d5b7);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: var(--bg-deep); font-family: 'Palatino Linotype', 'Georgia', serif; color: var(--text-dark); }
+
+    .screen {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      background: var(--bg-deep); padding: 20px;
+    }
+    .screen.active { display: flex; }
+
+    /* Classic TD Wooden & Parchment UI Styling */
+    .wood-panel {
+      background: var(--wood-gradient);
+      border: 4px solid #2d1912;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.2);
+      padding: 30px;
+      text-align: center;
+      max-width: 600px; width: 100%;
+    }
+
+    .parchment-panel {
+      background: var(--parchment-gradient);
+      border: 3px double #5d4037;
+      border-radius: 6px;
+      box-shadow: inset 0 0 20px rgba(93,64,55,0.15), 0 4px 10px rgba(0,0,0,0.3);
+      padding: 25px;
+      color: var(--text-dark);
+    }
+
+    h1.game-title {
+      font-family: 'MedievalSharp', 'Cinzel', serif;
+      font-size: 3.5rem;
+      color: #f5efe6;
+      text-shadow: 3px 3px 0px #2d1912, 0 0 20px rgba(181, 141, 61, 0.6);
+      margin-bottom: 40px;
+      letter-spacing: 2px;
+      animation: titleFloat 3s ease-in-out infinite alternate;
+    }
+    @keyframes titleFloat { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+
+    .btn {
+      display: inline-block; min-width: 200px; padding: 14px 24px; margin: 12px;
+      font-family: 'Cinzel', serif; font-weight: bold; font-size: 1.1rem;
+      color: var(--text-light); background: linear-gradient(180deg, #8d6e63, #5d4037);
+      border: 2px solid #3e2723; border-radius: 4px; cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3);
+      transition: all 0.2s ease; text-transform: uppercase;
+    }
+    .btn:hover { background: linear-gradient(180deg, #a1887f, #6d4c41); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.5); }
+    .btn:active { transform: translateY(1px); box-shadow: 0 2px 3px rgba(0,0,0,0.6); }
+
+    /* Stage Select Grid */
+    .stage-container {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+      max-width: 950px; width: 100%; margin: 30px 0;
+    }
+    .stage-card {
+      background: var(--parchment-gradient); border: 2px solid #5d4037; border-radius: 6px;
+      padding: 20px; cursor: pointer; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      transition: transform 0.2s; position: relative;
+    }
+    .stage-card:hover { transform: scale(1.03); border-color: var(--gold); }
+    .stage-card h3 { font-family: 'Cinzel', serif; color: #3e2723; margin-bottom: 8px; font-size: 1.25rem; }
+    .stage-card p { font-size: 0.9rem; color: #55443d; font-style: italic; }
+
+    /* Difficulty Select Panel Overlay */
+    .diff-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(28,20,14,0.85); display:none; align-items: center; justify-content: center;
+      z-index: 10;
+    }
+    .diff-overlay.active { display: flex; }
+
+    /* HUD Bar & Game Screen */
+    #gameScreen { padding: 0; background: #15100c; position: relative; }
+    
+    .top-hud {
+      width: 100%; height: 50px; background: #3e2723; border-bottom: 3px solid #2d1912;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+      color: var(--text-light); font-family: 'Cinzel', serif; box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+      z-index: 5;
+    }
+    .hud-left, .hud-right { display: flex; align-items: center; gap: 20px; }
+    .hud-center { font-size: 1.2rem; color: var(--gold); font-weight: bold; letter-spacing: 1px; }
+    .resource-item { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 1.05rem; }
+    
+    /* Top Action Buttons */
+    .action-btn {
+      background: #f5efe6; border: 2px solid #5d4037; border-radius: 4px;
+      padding: 4px 10px; font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: bold;
+      cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: inset 0 1px 2px white, 0 2px 4px rgba(0,0,0,0.3);
+      transition: all 0.2s;
+    }
+    .action-btn.retreat { color: #b71c1c; }
+    .action-btn.remove-mode { color: #3e2723; background: #ffd54f; border-color: #ffb300; }
+    .action-btn.remove-mode.active { background: #d32f2f; color: #fff; border-color: #9e1c1c; animation: pulseRed 1s infinite alternate; }
+    @keyframes pulseRed { from { box-shadow: 0 0 2px #d32f2f; } to { box-shadow: 0 0 10px #d32f2f; } }
+
+    /* Main Grid Canvas Wrapper */
+    .canvas-wrapper { position: relative; display: flex; justify-content: center; align-items: center; flex-grow: 1; width: 100%; }
+    canvas#gameCanvas { background: #2c221a; box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 4px 20px rgba(0,0,0,0.6); display: block; }
+
+    /* Bottom Cards Deck Panel */
+    .deck-panel {
+      width: 100%; height: 105px; background: #2d1912; border-top: 3px solid #1c140e;
+      display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0 15px;
+      box-shadow: 0 -4px 15px rgba(0,0,0,0.6);
+    }
+    .hero-card {
+      width: 82px; height: 90px; background: var(--parchment-gradient);
+      border: 2px solid #5d4037; border-radius: 4px; cursor: pointer; position: relative;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      padding: 4px; box-shadow: 0 3px 5px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.4);
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .hero-card:hover { transform: translateY(-4px); border-color: var(--gold); }
+    .hero-card.selected { border-color: #ffb300; background: #fffde7; box-shadow: 0 0 12px #ffb300; }
+    .hero-card.cooldown { pointer-events: none; filter: grayscale(0.8) brightness(0.6); }
+    .hero-card.cooldown::after {
+      content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: var(--cd-height, 0%);
+      background: rgba(0, 0, 0, 0.45); transition: height 0.1s linear; pointer-events: none;
+    }
+    .hero-card b { font-size: 0.75rem; color: #3e2723; text-align: center; word-break: break-word; line-height: 1; }
+    .hero-card .cost { font-size: 0.75rem; font-weight: bold; color: #1b5e20; }
+    .card-preview { width: 44px; height: 40px; display: block; background: transparent; }
+
+    /* Overlays & Modals */
+    .overlay {
+      position: absolute; top:0; left:0; width:100%; height:100%;
+      background: rgba(18,13,10,0.92); display:none; align-items:center; justify-content:center; padding:30px; z-index:20;
+    }
+    .overlay.active { display: flex; }
+    .overlay-content { max-width: 800px; width:100%; max-height: 85vh; overflow-y:auto; border: 4px solid #4e342e; }
+    
+    /* Almanac Grid UI */
+    .almanac-tabs { display:flex; gap:10px; margin-bottom: 20px; justify-content: center; }
+    .tab {
+      padding: 8px 16px; background: #4e342e; color: #d7ccc8; border: 1px solid #3e2723;
+      cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.9rem; border-radius: 3px;
+    }
+    .tab.active { background: var(--gold); color: #2c1e1a; font-weight: bold; }
+    .almanac-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .entry {
+      background: rgba(255,255,255,0.06); border: 1px solid #5d4037; border-radius: 4px;
+      padding: 12px; display: flex; gap: 15px; align-items: center; color: var(--text-light);
+    }
+    .entry .preview { width: 70px; height: 70px; background: #2c221a; border-radius: 4px; border: 1px solid #5d4037; }
+    .entry-info { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }
+    .entry-info b { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1rem; }
+    .entry-info span { font-size: 0.85rem; color: #d7ccc8; line-height: 1.3; }
+    .entry-info i { font-size: 0.75rem; color: #a1887f; }
+
+    /* Custom Confirm Dialog Box */
+    .custom-confirm {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100;
+    }
+    .custom-confirm.active { display: flex; }
+    .confirm-box {
+      background: #f5efe6; border: 3px solid #5d4037; border-radius: 6px; padding: 25px;
+      max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .confirm-box p { font-size: 1.1rem; font-weight: bold; color: #2c1e1a; margin-bottom: 20px; }
+    .confirm-btns { display: flex; justify-content: center; gap: 15px; }
+    .confirm-btn {
+      padding: 8px 20px; font-family: 'Cinzel', serif; font-weight: bold; border-radius: 4px; cursor: pointer; border: 2px solid;
+    }
+    .confirm-btn.yes { background: #d32f2f; color: #fff; border-color: #9e1c1c; }
+    .confirm-btn.no { background: #fff; color: #5d4037; border-color: #5d4037; }
+
+    /* Result Panels */
+    .result-title { font-family: 'MedievalSharp', serif; font-size: 3rem; margin-bottom: 15px; }
+    .result-title.victory { color: #2e7d32; text-shadow: 0 0 10px rgba(76,175,80,0.4); }
+    .result-title.defeat { color: #c62828; text-shadow: 0 0 10px rgba(198,40,40,0.4); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #2d1912; }
+    ::-webkit-scrollbar-thumb { background: #5d4037; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <div id="menuScreen" class="screen active">
+    <div class="wood-panel">
+      <h1 class="game-title">Attack The Tide</h1>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <button id="playBtn" class="btn">To Battle</button>
+        <button id="almanacBtn" class="btn">Almanac</button>
+        <button id="howBtn" class="btn">How to Play</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="selectScreen" class="screen">
+    <div class="wood-panel" style="max-width: 1000px; position: relative;">
+      <h2 style="font-family: 'Cinzel', serif; color: #f5efe6; margin-bottom: 10px; font-size: 2rem;">Select An Era</h2>
+      <div class="stage-container" id="stageGrid"></div>
+      <button id="selectBack" class="btn" style="min-width: 150px; padding: 10px 20px;">Back</button>
+
+      <div id="diffOverlay" class="diff-overlay">
+        <div class="parchment-panel" style="text-align: center; max-width: 400px; width: 100%;">
+          <h3 style="font-family: 'Cinzel', serif; margin-bottom: 20px; font-size: 1.4rem;">Choose Battle Intensity</h3>
+          <button class="btn" data-diff="Easy" style="background: #4caf50; border-color: #388e3c; margin: 8px 0; width: 100%;">Easy (x1.0 HP)</button>
+          <button class="btn" data-diff="Medium" style="background: #ff9800; border-color: #f57c00; margin: 8px 0; width: 100%;">Medium (x1.5 HP)</button>
+          <button class="btn" data-diff="Hard" style="background: #f44336; border-color: #d32f2f; margin: 8px 0; width: 100%;">Hard (x2.0 HP)</button>
+          <button id="diffCancel" class="btn" style="background: #78909c; border-color: #546e7a; margin: 15px 0 0 0; width: 100%; padding: 8px;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameScreen" class="screen">
+    <div class="top-hud">
+      <div class="hud-left">
+        <button id="retreatBtn" class="action-btn retreat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.3 3.3a1 1 0 0 0-1.4 0L4.3 9.9a1 1 0 0 0 0 1.4l6.6 6.6a1 1 0 0 0 1.4-1.4L7.4 12.5H20a1 1 0 0 0 0-2H7.4l4.9-4.9a1 1 0 0 0 0-1.3z"/></svg>
+          Retreat
+        </button>
+      </div>
+      <div class="hud-center" id="hudEraName">Primitive Era</div>
+      <div class="hud-right">
+        <div class="resource-item" style="color: #ffb74d;">
+          <span>🥖 Buns:</span> <span id="bunCount">50</span>
+        </div>
+        <div class="resource-item" style="color: #64b5f6;">
+          <span>🔥 Flames:</span> <span id="flameCount">0</span>
+        </div>
+        <div id="waveIndicator" style="font-weight: bold; font-size: 0.95rem;">Wave: 0/0</div>
+        <button id="removeUnitBtn" class="action-btn remove-mode">
+          ❌ Remove Unit
+        </button>
+      </div>
+    </div>
+
+    <div class="canvas-wrapper">
+      <canvas id="gameCanvas" width="960" height="540"></canvas>
+      
+      <div id="retreatConfirm" class="custom-confirm">
+        <div class="confirm-box">
+          <p>Sound a retreat and abandon this battle?</p>
+          <div class="confirm-btns">
+            <button id="confirmRetreatYes" class="confirm-btn yes">Retreat</button>
+            <button id="confirmRetreatNo" class="confirm-btn no">Stay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="deck-panel" id="cardsPanel"></div>
+  </div>
+
+  <div id="resultScreen" class="screen" style="background: rgba(15,11,8,0.96); z-index: 30;">
+    <div class="wood-panel">
+      <div id="resultTitle" class="result-title victory">Victory!</div>
+      <div class="parchment-panel" id="resultReport" style="margin: 20px 0; text-align: left; font-size: 1rem; line-height: 1.6;"></div>
+      <button id="againBtn" class="btn">Fight Again</button>
+      <button id="resultMenuBtn" class="btn">Main Menu</button>
+    </div>
+  </div>
+
+  <div id="almanacOverlay" class="overlay">
+    <div class="wood-panel overlay-content">
+      <h2 style="font-family: 'Cinzel', serif; color: #f5efe6; margin-bottom: 15px;">Chronicle Almanac</h2>
+      <div class="almanac-tabs">
+        <button class="tab active" data-tab="heroes">Defenders</button>
+        <button class="tab" data-tab="enemies">Tide Invaders</button>
+      </div>
+      <div class="almanac-grid" id="almanacList"></div>
+      <button class="btn closeOverlay" style="margin-top: 20px; padding: 8px 24px;">Close</button>
+    </div>
+  </div>
+
+  <div id="howOverlay" class="overlay">
+    <div class="wood-panel overlay-content" style="max-width: 650px;">
+      <h2 style="font-family: 'Cinzel', serif; color: #f5efe6; margin-bottom: 15px;">Battle Rules</h2>
+      <div class="parchment-panel" style="text-align: left; font-size: 0.95rem; line-height: 1.6; max-height: 50vh; overflow-y: auto;">
+        <p><b>Objective:</b> Hold out against waves of invaders moving down the combat lanes. If any enemy passes your final defense defenses on the far left, the tide will crush your encampment.</p><br>
+        <p><b>Placing Defenders:</b> Spend 🥖 <b>Buns</b> collected over time to place units down onto any empty cell within columns 2 through 10. Placement is permitted even if an enemy is in the lane, provided the cell itself is empty.</p><br>
+        <p><b>Spikeweed Exception:</b> Spikeweed can be positioned directly underneath active enemies to instantly damage them on the ground.</p><br>
+        <p><b>Removal Mode:</b> Press the ❌ <b>Remove Unit</b> action button in the top right to switch into demolition mode. Click any active defender on the grid to clear the space instantly (no refunds). Press Escape or click again to cancel.</p><br>
+        <p><b>Blue Sacred Flames:</b> Special glowing commanders drop Blue Sacred Flames upon defeat. Use them to deploy advanced hero elements and tactical features.</p>
+      </div>
+      <button class="btn closeOverlay" style="margin-top: 20px; padding: 8px 24px;">Understood</button>
+    </div>
+  </div>
+
+  <script>
+    // --- DATABASE DATA CONTEXTS ---
+    const eras = [
+      { id: "primitive", name: "Primitive Era", desc: "A desperate struggle fought with clubs and stones." },
+      { id: "ancient", name: "Ancient Era", desc: "Chariots rule the dunes under golden armor rays." },
+      { id: "medieval", name: "Medieval Era", desc: "Forged steel, heavy keeps, and legendary knights." },
+      { id: "modern", name: "Modern Era", desc: "Trench warfare, artillery thunder, and smoke lines." },
+      { id: "robotic", name: "Robotic Era", desc: "Automated chassis, hyper lasers, and cold engines." },
+      { id: "hybrid", name: "Hybrid Era", desc: "A chaotic temporal rift mixing all history's fury." }
+    ];
+
+    const heroes = [
+      { id: "farmer", name: "Farmer", cost: 50, flameCost: 0, cd: 7000, desc: "Gathers buns over time.", color: "#8d6e63" },
+      { id: "shield", name: "Shield Bearer", cost: 50, flameCost: 0, cd: 12000, desc: "High health blocker.", color: "#b0bec5" },
+      { id: "archer", name: "Single Archer", cost: 100, flameCost: 0, cd: 8000, desc: "Fires single high-precision arrows.", color: "#4caf50" },
+      { id: "double", name: "Double Archer", cost: 175, flameCost: 0, cd: 12000, desc: "Fires two rapid arrows simultaneously.", color: "#2e7d32" },
+      { id: "dagger", name: "Dagger Thrower", cost: 125, flameCost: 0, cd: 9000, desc: "Throws fast low-damage piercing poison blades.", color: "#9c27b0" },
+      { id: "spikeweed", name: "Spikeweed", cost: 100, flameCost: 0, cd: 10000, desc: "Ground spikes. Can be placed under enemies.", color: "#795548" },
+      { id: "mine", name: "Proximity Mine", cost: 25, flameCost: 1, cd: 15000, desc: "Burrows down and arms a fatal red proximity dot.", color: "#bf360c" },
+      { id: "explosion", name: "Explosive Bomb", cost: 150, flameCost: 2, cd: 25000, desc: "A timed large round fuse bomb clearing the tile radius.", color: "#d32f2f" }
+    ];
+
+    // HP Standardisation Mapping: Low=6, Medium=12, High=24, Very High=48
+    const enemyTypes = [
+      { id: "bronze", name: "Bronze Soldier", toughness: "Low", hp: 6, speed: 0.6, reward: 15, isSpecial: false, desc: "Basic vanguard rank. Unarmed fists." },
+      { id: "silver", name: "Silver Soldier", toughness: "Medium", hp: 12, speed: 0.5, reward: 25, isSpecial: false, desc: "Seasoned core line defender. Tougher build." },
+      { id: "gold", name: "Gold Commander", toughness: "High", hp: 24, speed: 0.45, reward: 40, isSpecial: false, desc: "Heavy armored unit holding strategic lane priority." },
+      { id: "star", name: "Star Soldier", toughness: "Medium", hp: 12, speed: 0.7, reward: 35, isSpecial: true, desc: "Flag bearer carrying an upright red marker banner on helmet.", flameDrop: 1 },
+      { id: "blakeman", name: "Blake Man", toughness: "High", hp: 24, speed: 0.4, reward: 60, isSpecial: true, desc: "Medieval swordsman with a large claymore sheathed across his back.", flameDrop: 1 },
+      { id: "rider", name: "Female Rider", toughness: "High", hp: 24, speed: 1.1, reward: 75, isSpecial: true, desc: "Motorized assault specialist wearing a distinct cat-eared helmet.", flameDrop: 2 },
+      { id: "dog", name: "Underworld Dog", toughness: "Very High", hp: 48, speed: 0.8, reward: 100, isSpecial: true, desc: "Temporal beast showcasing twin split tails and erratic bounding hops.", flameDrop: 3 }
+    ];
+
+    // --- GAME ENGINE STATE CONTROLS ---
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let state = {
+      screen: "menu",
+      stage: null,
+      diff: "Easy",
+      buns: 50,
+      flames: 0,
+      wave: 0,
+      maxWaves: 5,
+      removalMode: false,
+      grid: [], // 5 lanes x 10 columns (col 0 reserved for rollers)
+      units: [],
+      enemies: [],
+      projectiles: [],
+      particles: [],
+      rollers: [true, true, true, true, true],
+      selectedHero: null,
+      cooldowns: {},
+      prepTimeLeft: 30 * 60, // 30-second silent prep phase
+      waveTimer: 0,
+      gameActive: false,
+      bunsAccumulator: 0,
+      score: 0
+    };
+
+    const gridRows = 5;
+    const gridCols = 10;
+    const cellW = 96;
+    const cellH = 88;
+    const gridOffsetY = 80;
+
+    let selectedStage = null;
+    let selectedDiff = "Easy";
+
+    // --- PROCEDURAL CHARACTER ART ANIMATIONS (M.U.G.E.N STYLE BLENDS) ---
+    // Characters have no eyes, prominent stylized open mouth shapes, bold contours, steady upper bodies, and animated legs.
+    function drawMugenChibi(ctx, cx, cy, type, side, frameTime, info = {}) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(side, 1);
+
+      let isAttacking = info.isAttacking || false;
+      let animCycle = Math.sin(frameTime * 0.15);
+      let hopOffset = 0;
+      
+      if (type === "dog") {
+        // Underworld Dog hopping animation loop
+        hopOffset = -Math.abs(Math.sin(frameTime * 0.2)) * 14;
+        ctx.translate(0, hopOffset);
+      }
+
+      // 1. LEGS LAYER (Only parts that animate fluidly during motion checks)
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = "#1a0f0b";
+      ctx.fillStyle = info.pantsColor || "#4e342e";
+
+      let leftLegSwing = animCycle * 8;
+      let rightLegSwing = -animCycle * 8;
+      
+      if (type === "dog") {
+        leftLegSwing = 3; rightLegSwing = -3; // Steady paws during leaps
+      }
+
+      // Left Leg
+      ctx.beginPath();
+      ctx.arc(-8 + leftLegSwing, 28, 5, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      // Right Leg
+      ctx.beginPath();
+      ctx.arc(8 + rightLegSwing, 28, 5, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      // 2. MAIN CORE BODY (Upper torso holds strictly static posture positions)
+      ctx.fillStyle = info.armorColor || "#a1887f";
+      ctx.beginPath();
+      ctx.roundRect(-14, -6, 28, 28, 6);
+      ctx.fill(); ctx.stroke();
+
+      // 3. TWIN TAILS (Underworld Dog verification check)
+      if (type === "dog") {
+        ctx.fillStyle = "#263238";
+        ctx.lineWidth = 3;
+        // Tail 1 Upper
+        ctx.beginPath();
+        ctx.ellipse(-16, 2, 14, 5, Math.PI / 4 + (animCycle * 0.1), 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        // Tail 2 Lower
+        ctx.beginPath();
+        ctx.ellipse(-18, 12, 15, 5, -Math.PI / 6 - (animCycle * 0.1), 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+      }
+
+      // 4. BLAKE MAN CLAYMORE SHEATH BACKDROP HOOK
+      if (type === "blakeman") {
+        ctx.save();
+        ctx.rotate(-0.4);
+        // Sheath outline
+        ctx.fillStyle = "#3e2723";
+        ctx.fillRect(-22, -26, 7, 34);
+        ctx.strokeRect(-22, -26, 7, 34);
+        // Massive Sword hilt rising over shoulder line
+        ctx.fillStyle = "#b58d3d";
+        ctx.fillRect(-24, -36, 11, 4);
+        ctx.fillStyle = "#cfd8dc";
+        ctx.fillRect(-20, -44, 3, 9);
+        ctx.restore();
+      }
+
+      // 5. VEHICLE UNIT RIG (Robotic Rider Chassis)
+      if (type === "rider") {
+        ctx.fillStyle = "#37474f";
+        ctx.beginPath();
+        ctx.arc(-22, 26, 11, 0, Math.PI*2);
+        ctx.arc(22, 26, 11, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        // Motorcycle Body Framework Frame
+        ctx.fillStyle = "#cfd8dc";
+        ctx.beginPath();
+        ctx.moveTo(-22, 26);
+        ctx.lineTo(-5, 8);
+        ctx.lineTo(20, 8);
+        ctx.lineTo(22, 26);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      }
+
+      // 6. HEAD STRUCTURE
+      ctx.fillStyle = info.skinColor || "#f5e0d3";
+      ctx.beginPath();
+      ctx.arc(0, -18, 13, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      // M.U.G.E.N RULE APPLIED: No eyes, distinct stylized open combat mouth expression
+      ctx.fillStyle = "#5d4037";
+      ctx.beginPath();
+      if (isAttacking) {
+        ctx.arc(5, -16, 4, 0, Math.PI * 2); // Widen mouth during offensive actions
+      } else {
+        ctx.arc(4, -16, 2.5, 0, Math.PI); // Open breathing line arc shape
+      }
+      ctx.fill();
+
+      // HELMET OVERLAY WRAPPER RIGS
+      if (info.hasHelmet) {
+        ctx.fillStyle = info.helmetColor || "#cfd8dc";
+        ctx.beginPath();
+        ctx.arc(0, -20, 14, Math.PI, 0);
+        ctx.lineTo(14, -16);
+        ctx.lineTo(-14, -16);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Cat Helmet Ear extensions for the Female Rider unit
+        if (type === "rider") {
+          ctx.beginPath();
+          ctx.moveTo(-11, -32); ctx.lineTo(-4, -26); ctx.lineTo(-14, -22); ctx.closePath();
+          ctx.moveTo(11, -32); ctx.lineTo(4, -26); ctx.lineTo(14, -22); ctx.closePath();
+          ctx.fill(); ctx.stroke();
+        }
+      }
+
+      // STAR SOLDIER HELMET BANNERS
+      if (type === "star") {
+        ctx.fillStyle = "#d32f2f";
+        ctx.fillRect(-2, -44, 4, 12);
+        ctx.beginPath();
+        ctx.moveTo(2, -44); ctx.lineTo(18, -39); ctx.lineTo(2, -34);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      }
+
+      // 7. WEAPON HANDLING LAYER (Always visually locked secure to arms without displacement artifacts)
+      ctx.fillStyle = info.armorColor || "#a1887f";
+      if (type === "archer" || type === "double") {
+        // Draw real bow tool frames locked in hand positions
+        ctx.strokeStyle = "#8d6e63";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(12, -4, 16, -Math.PI/2, Math.PI/2);
+        ctx.stroke();
+        // Arrow drawstring link setup
+        ctx.strokeStyle = "#eeeeee";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (isAttacking) {
+          ctx.moveTo(12, -20); ctx.lineTo(2, -4); ctx.lineTo(12, 12);
+          // Drawing loaded missile profile
+          ctx.strokeStyle = "#cfd8dc";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(0, -4); ctx.lineTo(16, -4); ctx.stroke();
+        } else {
+          ctx.moveTo(12, -20); ctx.lineTo(12, 12);
+        }
+        ctx.stroke();
+      } else if (type === "dagger") {
+        // Holds dagger visibly inside active tracking hands
+        ctx.fillStyle = "#78909c";
+        ctx.fillRect(8, -2, 12, 4);
+        ctx.beginPath(); ctx.moveTo(20, -4); ctx.lineTo(26, 0); ctx.lineTo(20, 4); ctx.closePath(); ctx.fill();
+      } else if (info.unarmed) {
+        // Basic Soldiers walk completely unarmed with clenched side fists
+        ctx.fillStyle = info.skinColor || "#f5e0d3";
+        ctx.beginPath(); ctx.arc(10, 4, 4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      } else {
+        // Standard placeholder arm loop
+        ctx.beginPath();
+        ctx.arc(8, 4, 4.5, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // --- ALMANAC PREVIEW SCENE CAPTURES ---
+    function renderAlmanacPreviews() {
+      document.querySelectorAll("canvas.preview").forEach(cnv => {
+        const pctx = cnv.getContext("2d");
+        pctx.clearRect(0,0,cnv.width,cnv.height);
+        const kind = cnv.dataset.kind;
+        const id = cnv.dataset.id;
+        
+        pctx.save();
+        pctx.scale(0.85, 0.85);
+        
+        if (kind === "heroes") {
+          // Render specific defender setups
+          if (id === "farmer") drawMugenChibi(pctx, 40, 50, "farmer", 1, 0, { armorColor: "#8d6e63", skinColor: "#fdd835" });
+          if (id === "shield") drawMugenChibi(pctx, 40, 50, "shield", 1, 0, { armorColor: "#90a4ae", hasHelmet: true, helmetColor: "#b0bec5" });
+          if (id === "archer") drawMugenChibi(pctx, 40, 50, "archer", 1, 0, { armorColor: "#4caf50" });
+          if (id === "double") drawMugenChibi(pctx, 40, 50, "double", 1, 0, { armorColor: "#2e7d32" });
+          if (id === "dagger") drawMugenChibi(pctx, 40, 50, "dagger", 1, 0, { armorColor: "#ab47bc" });
+          if (id === "spikeweed") drawStaticObjects(pctx, 40, 50, "spikeweed", 0);
+          if (id === "mine") drawStaticObjects(pctx, 40, 50, "mine", 0);
+          if (id === "explosion") drawStaticObjects(pctx, 40, 50, "explosion", 0);
+        } else {
+          // Render specific invader configurations
+          if (id === "bronze") drawMugenChibi(pctx, 45, 50, "bronze", -1, 0, { armorColor: "#cd7f32", unarmed: true });
+          if (id === "silver") drawMugenChibi(pctx, 45, 50, "silver", -1, 0, { armorColor: "#c0c0c0", hasHelmet: true, unarmed: true });
+          if (id === "gold") drawMugenChibi(pctx, 45, 50, "gold", -1, 0, { armorColor: "#d4af37", hasHelmet: true, helmetColor: "#d4af37", unarmed: true });
+          if (id === "star") drawMugenChibi(pctx, 45, 50, "star", -1, 0, { armorColor: "#37474f", hasHelmet: true, helmetColor: "#37474f", unarmed: true });
+          if (id === "blakeman") drawMugenChibi(pctx, 45, 50, "blakeman", -1, 0, { armorColor: "#546e7a", skinColor: "#cfd8dc" });
+          if (id === "rider") drawMugenChibi(pctx, 45, 40, "rider", -1, 0, { armorColor: "#212121", hasHelmet: true, helmetColor: "#f06292" });
+          if (id === "dog") drawMugenChibi(pctx, 45, 50, "dog", -1, 0, { armorColor: "#263238", skinColor: "#37474f" });
+        }
+        pctx.restore();
+      });
+    }
+
+    function drawStaticObjects(ctx, x, y, type, frame) {
+      ctx.save();
+      ctx.translate(x, y);
+      
+      if (type === "spikeweed") {
+        ctx.fillStyle = "#5d4037";
+        ctx.fillRect(-22, 22, 44, 6);
+        ctx.strokeStyle = "#3e2723";
+        ctx.lineWidth = 2.5;
+        ctx.fillStyle = "#795548";
+        
+        // Mechanical ground spikes snap framework animation
+        let snap = Math.abs(Math.sin(frame * 0.1)) * 14;
+        ctx.beginPath();
+        for(let i = -20; i <= 20; i += 10) {
+          ctx.moveTo(i, 22);
+          ctx.lineTo(i + 4, 6 + snap);
+          ctx.lineTo(i + 8, 22);
+        }
+        ctx.fill(); ctx.stroke();
+      } 
+      else if (type === "mine") {
+        // Brown dirt mound with a bright flashing armed proximity indicator dot
+        ctx.fillStyle = "#8d6e63";
+        ctx.beginPath();
+        ctx.ellipse(0, 20, 20, 10, 0, Math.PI, 0);
+        ctx.fill();
+        ctx.strokeStyle = "#5d4037";
+        ctx.stroke();
+        
+        // Active pulsing red dot trigger
+        ctx.fillStyle = (Math.floor(frame / 12) % 2 === 0) ? "#d32f2f" : "#ffeb3b";
+        ctx.beginPath();
+        ctx.arc(0, 12, 3.5, 0, Math.PI*2);
+        ctx.fill();
+      } 
+      else if (type === "explosion") {
+        // Large round traditional fuse bomb model
+        ctx.fillStyle = "#212121";
+        ctx.beginPath();
+        ctx.arc(0, 10, 16, 0, Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = "#424242";
+        ctx.stroke();
+        
+        // Metallic upper fuse tip
+        ctx.fillStyle = "#757575";
+        ctx.fillRect(-3, -8, 6, 4);
+        
+        // Sparking lit string fuse element
+        ctx.strokeStyle = "#ffb300";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -8);
+        ctx.quadraticCurveTo(8, -16, 12, -14);
+        ctx.stroke();
+        
+        // Flash glow particles before ignition detonation
+        if (Math.floor(frame / 6) % 2 === 0) {
+          ctx.fillStyle = "#d32f2f";
+          ctx.beginPath(); ctx.arc(12, -14, 4, 0, Math.PI*2); ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    // --- MAIN CORE SETUP ROUTINES ---
+    function makeStageCards() {
+      const grid = document.getElementById("stageGrid");
+      grid.innerHTML = eras.map(e => `
+        <div class="stage-card" onclick="selectStage('${e.id}')">
+          <h3>${e.name}</h3>
+          <p>${e.desc}</p>
+        </div>
+      `).join("");
+    }
+
+    function selectStage(stageId) {
+      selectedStage = stageId;
+      document.getElementById("diffOverlay").classList.add("active");
+    }
+
+    document.getElementById("diffCancel").onclick = () => {
+      document.getElementById("diffOverlay").classList.remove("active");
+    };
+
+    document.querySelectorAll("[data-diff]").forEach(btn => {
+      btn.onclick = (e) => {
+        selectedDiff = e.target.dataset.diff;
+        document.getElementById("diffOverlay").classList.remove("active");
+        showScreen("game");
+        startGame(selectedStage, selectedDiff);
+      };
+    });
+
+    function showScreen(screenId) {
+      state.screen = screenId;
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById(screenId + "Screen").classList.add("active");
+      
+      if (screenId === "menu") {
+        state.gameActive = false;
+      }
+    }
+
+    function fillAlmanac(tab) {
+      const container = document.getElementById("almanacList");
+      document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+      
+      if (tab === "heroes") {
+        container.innerHTML = heroes.map(h => `
+          <div class="entry">
+            <canvas class="preview" width="80" height="80" data-kind="heroes" data-id="${h.id}"></canvas>
+            <div class="entry-info">
+              <b>${h.name}</b>
+              <span>${h.desc}</span>
+              <i>Cost: 🥖 ${h.cost} | Cooldown: ${(h.cd/1000).toFixed(1)}s</i>
+            </div>
+          </div>
+        `).join("");
+      } else {
+        container.innerHTML = enemyTypes.map(e => `
+          <div class="entry">
+            <canvas class="preview" width="80" height="80" data-kind="enemies" data-id="${e.id}"></canvas>
+            <div class="entry-info">
+              <b>${e.name}</b>
+              <span>${e.desc}</span>
+              <i>Toughness: ${e.toughness} (${e.hp} Archer Hits) | Speed: ${e.speed}</i>
+            </div>
+          </div>
+        `).join("");
+      }
+      renderAlmanacPreviews();
+    }
+
+    // --- GAME INITIALIZATION ENGINE ---
+    function startGame(stageId, difficulty) {
+      state.stage = stageId;
+      state.diff = difficulty;
+      state.buns = 50;
+      state.flames = 0;
+      state.wave = 0;
+      state.maxWaves = 5;
+      state.removalMode = false;
+      document.getElementById("removeUnitBtn").classList.remove("active");
+      
+      state.units = [];
+      state.enemies = [];
+      state.projectiles = [];
+      state.particles = [];
+      state.rollers = [true, true, true, true, true];
+      state.cooldowns = {};
+      state.selectedHero = null;
+      state.score = 0;
+      state.prepTimeLeft = 30 * 60; // 30 seconds at 60fps
+      state.waveTimer = 0;
+      
+      const eraObj = eras.find(e => e.id === stageId);
+      document.getElementById("hudEraName").innerText = eraObj ? eraObj.name : "Battlefield";
+      
+      // Clear tracking matrix slots
+      state.grid = [];
+      for(let r=0; r<gridRows; r++) {
+        state.grid[r] = [];
+        for(let c=0; c<gridCols; c++) {
+          state.grid[r][c] = null;
+        }
+      }
+
+      // Generate visual control deck items
+      const deck = document.getElementById("cardsPanel");
+      deck.innerHTML = heroes.map(h => `
+        <div class="hero-card" id="card-${h.id}" onclick="selectHeroCard('${h.id}')">
+          <canvas class="card-preview" id="cp-${h.id}" width="44" height="40"></canvas>
+          <b>${h.name}</b>
+          <span class="cost">${h.flameCost > 0 ? '🔥 ' + h.flameCost : '🥖 ' + h.cost}</span>
+        </div>
+      `).join("");
+
+      // Render mini canvas shapes inside the card deck
+      heroes.forEach(h => {
+        const c = document.getElementById(`cp-${h.id}`);
+        if (!c) return;
+        const pctx = c.getContext("2d");
+        pctx.scale(0.55, 0.55);
+        if (h.id === "farmer") drawMugenChibi(pctx, 40, 44, "farmer", 1, 0, { armorColor: "#8d6e63", skinColor: "#fdd835" });
+        if (h.id === "shield") drawMugenChibi(pctx, 40, 44, "shield", 1, 0, { armorColor: "#90a4ae", hasHelmet: true, helmetColor: "#b0bec5" });
+        if (h.id === "archer") drawMugenChibi(pctx, 40, 44, "archer", 1, 0, { armorColor: "#4caf50" });
+        if (h.id === "double") drawMugenChibi(pctx, 40, 44, "double", 1, 0, { armorColor: "#2e7d32" });
+        if (h.id === "dagger") drawMugenChibi(pctx, 40, 44, "dagger", 1, 0, { armorColor: "#ab47bc" });
+        if (h.id === "spikeweed") drawStaticObjects(pctx, 40, 30, "spikeweed", 0);
+        if (h.id === "mine") drawStaticObjects(pctx, 40, 30, "mine", 0);
+        if (h.id === "explosion") drawStaticObjects(pctx, 40, 30, "explosion", 0);
+      });
+
+      updateHUD();
+      state.gameActive = true;
+    }
+
+    function selectHeroCard(id) {
+      if (state.removalMode) {
+        state.removalMode = false;
+        document.getElementById("removeUnitBtn").classList.remove("active");
+      }
+      
+      if (state.cooldowns[id] && Date.now() < state.cooldowns[id]) return;
+      
+      const h = heroes.find(x => x.id === id);
+      if (h.flameCost > 0 && state.flames < h.flameCost) return;
+      if (h.flameCost === 0 && state.buns < h.cost) return;
+
+      state.selectedHero = h;
+      document.querySelectorAll(".hero-card").forEach(c => c.classList.remove("selected"));
+      const card = document.getElementById(`card-${id}`);
+      if (card) card.classList.add("selected");
+    }
+
+    // Toggle interactive unit removal demolition feature
+    document.getElementById("removeUnitBtn").onclick = () => {
+      state.removalMode = !state.removalMode;
+      state.selectedHero = null;
+      document.querySelectorAll(".hero-card").forEach(c => c.classList.remove("selected"));
+      document.getElementById("removeUnitBtn").classList.toggle("active", state.removalMode);
+    };
+
+    // Keyboard cancel escape codes mapping
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        state.removalMode = false;
+        state.selectedHero = null;
+        document.querySelectorAll(".hero-card").forEach(c => c.classList.remove("selected"));
+        document.getElementById("removeUnitBtn").classList.remove("active");
+      }
+    });
+
+    // Custom Interactive Retreat Buttons Triggers
+    document.getElementById("retreatBtn").onclick = () => {
+      document.getElementById("retreatConfirm").classList.add("active");
+    };
+    document.getElementById("confirmRetreatNo").onclick = () => {
+      document.getElementById("retreatConfirm").classList.remove("active");
+    };
+    document.getElementById("confirmRetreatYes").onclick = () => {
+      document.getElementById("retreatConfirm").classList.remove("active");
+      state.gameActive = false;
+      showScreen("select");
+    };
+
+    // --- GRID POINTER EVENT CLICK DISPATCHERS ---
+    canvas.addEventListener("pointerdown", (e) => {
+      if (!state.gameActive) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      if (my < gridOffsetY || my > gridOffsetY + gridRows * cellH) return;
+      const r = Math.floor((my - gridOffsetY) / cellH);
+      const c = Math.floor(mx / cellW);
+
+      if (r < 0 || r >= gridRows || c < 0 || c >= gridCols) return;
+
+      // Handle active removal demolition action
+      if (state.removalMode) {
+        let existingIndex = state.units.findIndex(u => u.row === r && u.col === c);
+        if (existingIndex !== -1) {
+          state.units.splice(existingIndex, 1);
+          state.grid[r][c] = null;
+          spawnParticles(c * cellW + cellW/2, r * cellH + gridOffsetY + cellH/2, "#7d56c2", 8);
+        }
+        return;
+      }
+
+      // Standard positioning routines execution
+      if (!state.selectedHero) return;
+      
+      // General Placement Rule: Column 2-10, grid must be empty (except Spikeweed which can layer under enemies)
+      if (c < 1) return; 
+
+      let cellOccupied = state.grid[r][c] !== null;
+      if (cellOccupied && state.selectedHero.id !== "spikeweed") return;
+
+      // Expense validation deduction checks
+      const h = state.selectedHero;
+      if (h.flameCost > 0) {
+        if (state.flames < h.flameCost) return;
+        state.flames -= h.flameCost;
+      } else {
+        if (state.buns < h.cost) return;
+        state.buns -= h.cost;
+      }
+
+      // Add to running engine registry array list
+      let newUnit = {
+        id: h.id, name: h.name, row: r, col: c,
+        x: c * cellW + cellW/2, y: r * cellH + gridOffsetY + cellH/2,
+        hp: h.id === "shield" ? 60 : 15, maxHp: h.id === "shield" ? 60 : 15,
+        lastAction: 0, stateFrame: 0, armed: false,
+        isAttacking: false, attackTimer: 0
+      };
+
+      if (h.id === "spikeweed" || h.id === "mine" || h.id === "explosion") {
+        newUnit.hp = 9999; // Set separate object destruction models
+      }
+
+      state.units.push(newUnit);
+      if (h.id !== "spikeweed") {
+        state.grid[r][c] = newUnit;
+      }
+
+      // Set active card cooldown tracking markers
+      state.cooldowns[h.id] = Date.now() + h.cd;
+      
+      // Clear current hand slot hold selections
+      state.selectedHero = null;
+      document.querySelectorAll(".hero-card").forEach(card => card.classList.remove("selected"));
+      
+      updateHUD();
+    });
+
+    function updateHUD() {
+      document.getElementById("bunCount").innerText = Math.floor(state.buns);
+      document.getElementById("flameCount").innerText = state.flames;
+      document.getElementById("waveIndicator").innerText = `Wave: ${state.wave}/${state.maxWaves}`;
+    }
+
+    // --- PROCEDURAL WAVE GENERATION LOGIC ---
+    function triggerNextWave() {
+      if (state.wave >= state.maxWaves) {
+        // Evaluate remaining board sweeps to call complete victory state flags
+        if (state.enemies.length === 0) endGame(true);
+        return;
+      }
+
+      state.wave++;
+      updateHUD();
+      
+      let enemyCount = 4 + state.wave * 2;
+      let wavePool = ["bronze"];
+      
+      if (state.wave >= 2) wavePool.push("silver", "star");
+      if (state.wave >= 3) wavePool.push("gold", "blakeman");
+      if (state.stage === "robotic" || state.stage === "hybrid") wavePool.push("rider");
+      if (state.stage === "hybrid" && state.wave >= 4) wavePool.push("dog");
+
+      let diffMultiplier = 1.0;
+      if (state.diff === "Medium") diffMultiplier = 1.5;
+      if (state.diff === "Hard") diffMultiplier = 2.0;
+
+      for(let i=0; i<enemyCount; i++) {
+        let randType = wavePool[Math.floor(Math.random() * wavePool.length)];
+        let template = enemyTypes.find(x => x.id === randType);
+        let lane = Math.floor(Math.random() * gridRows);
+        
+        // Staggered horizontal layout spacing entries
+        let spawnX = canvas.width + 40 + (i * (70 + Math.random() * 60));
+
+        state.enemies.push({
+          id: template.id,
+          name: template.name,
+          row: lane,
+          x: spawnX,
+          y: lane * cellH + gridOffsetY + cellH/2,
+          hp: Math.floor(template.hp * diffMultiplier),
+          maxHp: Math.floor(template.hp * diffMultiplier),
+          speed: template.speed * (0.9 + Math.random()*0.2),
+          reward: template.reward,
+          isSpecial: template.isSpecial,
+          flameDrop: template.flameDrop || 0,
+          frame: Math.random() * 100,
+          isAttacking: false
+        });
+      }
+    }
+
+    function spawnParticles(x, y, color, count) {
+      for(let i=0; i<count; i++) {
+        state.particles.push({
+          x: x, y: y,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          alpha: 1,
+          color: color,
+          size: 2 + Math.random() * 4
+        });
+      }
+    }
+
+    function endGame(victory) {
+      state.gameActive = false;
+      const title = document.getElementById("resultTitle");
+      title.innerText = victory ? "Camp Victorious!" : "Defenses Broken!";
+      title.className = "result-title " + (victory ? "victory" : "defeat");
+      
+      document.getElementById("resultReport").innerHTML = `
+        <p><b>Timeline Era:</b> ${eras.find(e => e.id === state.stage).name}</p>
+        <p><b>Intensity setting:</b> ${state.diff}</p>
+        <p><b>Waves Conquered:</b> ${state.wave} / ${state.maxWaves}</p>
+        <p><b>Valor Score:</b> ${state.score}</p>
+      `;
+      document.getElementById("resultScreen").classList.add("active");
+    }
+
+    // --- TICK ENGINE CORE ANIMATION LOOP ---
+    function updateGame() {
+      if (!state.gameActive) return;
+
+      // 1. SILENT PREPARATION TIME CONTROL CHECK
+      if (state.prepTimeLeft > 0) {
+        state.prepTimeLeft--;
+        if (state.prepTimeLeft === 0) {
+          triggerNextWave();
+        }
+      } else {
+        // Continuous wave refresh evaluation monitors
+        if (state.enemies.length === 0 && state.wave < state.maxWaves) {
+          state.waveTimer++;
+          if (state.waveTimer > 180) { // 3-second delay gaps
+            state.waveTimer = 0;
+            triggerNextWave();
+          }
+        }
+      }
+
+      // Passive resource accumulation updates
+      state.bunsAccumulator += 0.025;
+      if (state.bunsAccumulator >= 1) {
+        state.buns += Math.floor(state.bunsAccumulator);
+        state.bunsAccumulator %= 1;
+        updateHUD();
+      }
+
+      // Direct card overlay cooldown processing updates
+      heroes.forEach(h => {
+        const card = document.getElementById(`card-${h.id}`);
+        if (!card) return;
+        let cdTime = state.cooldowns[h.id];
+        if (cdTime && Date.now() < cdTime) {
+          card.classList.add("cooldown");
+          let pct = ((cdTime - Date.now()) / h.cd) * 100;
+          card.style.setProperty('--cd-height', pct + '%');
+        } else {
+          card.classList.remove("cooldown");
+          card.style.setProperty('--cd-height', '0%');
+        }
+      });
+
+      // 2. RUNNING OBJECT UPDATES (PROJECTILES)
+      for (let i = state.projectiles.length - 1; i >= 0; i--) {
+        let p = state.projectiles[i];
+        p.x += p.speed;
+        
+        // Out of bounds clip garbage collection sweeps
+        if (p.x > canvas.width + 20) {
+          state.projectiles.splice(i, 1);
+          continue;
+        }
+
+        // Hit registration scanning routines
+        let targets = state.enemies.filter(e => e.row === p.row && Math.abs(e.x - p.x) < 24);
+        if (targets.length > 0) {
+          let target = targets[0];
+          target.hp -= p.dmg; // Damage tracking based explicitly on single archer hits
+          spawnParticles(p.x, p.y, p.color, 4);
+          
+          state.projectiles.splice(i, 1);
+          if (target.hp <= 0) {
+            let idx = state.enemies.indexOf(target);
+            if (idx !== -1) {
+              state.score += target.reward;
+              if (target.flameDrop > 0) {
+                state.flames += target.flameDrop;
+                spawnParticles(target.x, target.y, "#64b5f6", 12);
+              }
+              state.enemies.splice(idx, 1);
+              updateHUD();
+            }
+          }
+          continue;
+        }
+      }
+
+      // 3. DEFENDER RESTRUCTURING TICKS
+      state.units.forEach(u => {
+        u.stateFrame++;
+        
+        // Separate behavior processing branches per structural unit identity
+        if (u.id === "farmer") {
+          if (Date.now() - u.lastAction > 5000) {
+            state.buns += 25;
+            u.lastAction = Date.now();
+            spawnParticles(u.x, u.y - 10, "#ffa726", 6);
+            updateHUD();
+          }
+        } 
+        else if (u.id === "archer" || u.id === "double") {
+          // Check target threats present down active combat lane slots
+          let targets = state.enemies.filter(e => e.row === u.row && e.x > u.x && e.x < canvas.width);
+          if (targets.length > 0) {
+            u.isAttacking = true;
+            if (Date.now() - u.lastAction > 2000) {
+              // Loose missile arrow vectors
+              state.projectiles.push({
+                row: u.row, x: u.x + 15, y: u.y - 4, speed: 7, dmg: 1, color: "#d7ccc8"
+              });
+              if (u.id === "double") {
+                // Second rapid stagger instance arrow asset
+                setTimeout(() => {
+                  if (!state.gameActive) return;
+                  state.projectiles.push({
+                    row: u.row, x: u.x + 15, y: u.y - 4, speed: 7, dmg: 1, color: "#d7ccc8"
+                  });
+                }, 200);
+              }
+              u.lastAction = Date.now();
+            }
+          } else {
+            u.isAttacking = false;
+          }
+        } 
+        else if (u.id === "dagger") {
+          let targets = state.enemies.filter(e => e.row === u.row && e.x > u.x && e.x < canvas.width);
+          if (targets.length > 0) {
+            u.isAttacking = true;
+            if (Date.now() - u.lastAction > 1200) {
+              // Poison Dagger provides low damage pierce values (= 2 damage total per throw)
+              state.projectiles.push({
+                row: u.row, x: u.x + 15, y: u.y - 4, speed: 9, dmg: 2, color: "#ab47bc"
+              });
+              u.lastAction = Date.now();
+            }
+          } else {
+            u.isAttacking = false;
+          }
+        }
+        else if (u.id === "mine") {
+          if (!u.armed && u.stateFrame > 180) { // 3 seconds nesting window
+            u.armed = true;
+          }
+          if (u.armed) {
+            let threats = state.enemies.filter(e => e.row === u.row && Math.abs(e.x - u.x) < 28);
+            if (threats.length > 0) {
+              // Trigger destructive high damage blast radius lines
+              threats.forEach(t => t.hp -= 30);
+              spawnParticles(u.x, u.y, "#ff5722", 20);
+              u.hp = 0; // Trigger self cleanup flags
+            }
+          }
+        }
+        else if (u.id === "explosion") {
+          if (u.stateFrame > 120) { // 2 seconds delay fuse line ignition triggers
+            state.enemies.forEach(e => {
+              let dist = Math.hypot(e.x - u.x, e.y - u.y);
+              if (dist < 130) e.hp -= 40; // Wide structural footprint damage sweeps
+            });
+            spawnParticles(u.x, u.y, "#d32f2f", 35);
+            u.hp = 0;
+          }
+        }
+      });
+
+      // Post-combat casualty filter arrays sweeps
+      state.enemies = state.enemies.filter(e => e.hp > 0);
+      state.units = state.units.filter(u => {
+        if (u.hp <= 0) {
+          if (state.grid[u.row][u.col] === u) state.grid[u.row][u.col] = null;
+          return false;
+        }
+        return true;
+      });
+
+      // 4. INVADER ENEMY LOGIC TICKS
+      state.enemies.forEach(e => {
+        e.frame += 1.0;
+        
+        // Evaluate forward obstacle intersections
+        let currentCol = Math.floor(e.x / cellW);
+        let blockUnit = null;
+        if (currentCol >= 0 && currentCol < gridCols) {
+          blockUnit = state.grid[e.row][currentCol];
+        }
+
+        // Spikeweed bypass evaluation rules check
+        if (blockUnit && blockUnit.id !== "spikeweed" && blockUnit.id !== "mine" && blockUnit.id !== "explosion") {
+          e.isAttacking = true;
+          if (Date.now() - (e.lastAttack || 0) > 1500) {
+            blockUnit.hp -= 4;
+            e.lastAttack = Date.now();
+            spawnParticles(blockUnit.x, blockUnit.y, "#d32f2f", 4);
+          }
+        } else {
+          e.isAttacking = false;
+          e.x -= e.speed;
+          
+          // Continuous Spikeweed proximity tick checks
+          state.units.forEach(u => {
+            if (u.id === "spikeweed" && u.row === e.row && Math.abs(u.x - e.x) < 32) {
+              if (u.stateFrame % 40 === 0) { // Stagger damage tick interval
+                e.hp -= 1; // 1 archer hit conversion points
+                spawnParticles(e.x, e.y, "#795548", 3);
+              }
+            }
+          });
+        }
+
+        // 5. LAWN SPIKE ROLLER CRITICAL INTERCEPT MANAGEMENT CHECKS
+        if (e.x <= cellW) { 
+          let lane = e.row;
+          if (state.rollers[lane]) {
+            // Trigger emergency lane wipe mechanics
+            state.rollers[lane] = false;
+            // Purge all active threat registries occupying targeted combat fields
+            state.enemies.forEach(invader => {
+              if (invader.row === lane) {
+                invader.hp = 0;
+                spawnParticles(invader.x, invader.y, "#757575", 15);
+              }
+            });
+            state.enemies = state.enemies.filter(ex => ex.hp > 0);
+          } else {
+            // Core objective loss check condition reached
+            endGame(false);
+          }
+        }
+      });
+
+      // Particle decay updates
+      state.particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
+      });
+      state.particles = state.particles.filter(p => p.alpha > 0);
+    }
+
+    // --- CANVAS DRAWING GRAPHICS ENGINE ---
+    function drawGame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. DRAW TACTILE LANE GRID BACKGROUND FIELD SLOTS
+      for(let r=0; r<gridRows; r++) {
+        for(let c=0; c<gridCols; c++) {
+          if (c === 0) {
+            ctx.fillStyle = "#251c16"; // Home defense staging column tone
+          } else {
+            ctx.fillStyle = ((r + c) % 2 === 0) ? "#352920" : "#2c221a";
+          }
+          ctx.fillRect(c * cellW, r * cellH + gridOffsetY, cellW, cellH);
+          
+          ctx.strokeStyle = "rgba(93, 64, 55, 0.15)";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(c * cellW, r * cellH + gridOffsetY, cellW, cellH);
+        }
+      }
+
+      // Draw horizontal dividing track lines
+      ctx.strokeStyle = "#4e342e";
+      ctx.lineWidth = 3;
+      for (let r = 0; r <= gridRows; r++) {
+        ctx.beginPath();
+        ctx.moveTo(0, r * cellH + gridOffsetY);
+        ctx.lineTo(canvas.width, r * cellH + gridOffsetY);
+        ctx.stroke();
+      }
+
+      // 2. RENDERING LANE PROTECTION ROW ROLLERS
+      for(let r=0; r<gridRows; r++) {
+        if (state.rollers[r]) {
+          let rx = cellW / 2;
+          let ry = r * cellH + gridOffsetY + cellH / 2;
+          ctx.fillStyle = "#7d56c2";
+          ctx.beginPath();
+          ctx.arc(rx, ry, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "#2d1912";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          // Inner core spikes details
+          ctx.fillStyle = "#b58d3d";
+          ctx.beginPath(); ctx.arc(rx, ry, 6, 0, Math.PI*2); ctx.fill();
+        }
+      }
+
+      // 3. DRAW PLACED DEFENDERS
+      state.units.forEach(u => {
+        if (u.id === "spikeweed" || u.id === "mine" || u.id === "explosion") {
+          drawStaticObjects(ctx, u.x, u.y, u.id, u.stateFrame);
+        } else {
+          let side = 1;
+          let f = u.stateFrame;
+          // Apply dynamic parameter configs matching specific base chassis configurations
+          if (u.id === "farmer") drawMugenChibi(ctx, u.x, u.y + 6, "farmer", side, f, { armorColor: "#8d6e63", skinColor: "#fdd835", isAttacking: u.isAttacking });
+          if (u.id === "shield") drawMugenChibi(ctx, u.x, u.y + 6, "shield", side, f, { armorColor: "#90a4ae", hasHelmet: true, helmetColor: "#b0bec5", isAttacking: u.isAttacking });
+          if (u.id === "archer") drawMugenChibi(ctx, u.x, u.y + 6, "archer", side, f, { armorColor: "#4caf50", isAttacking: u.isAttacking });
+          if (u.id === "double") drawMugenChibi(ctx, u.x, u.y + 6, "double", side, f, { armorColor: "#2e7d32", isAttacking: u.isAttacking });
+          if (u.id === "dagger") drawMugenChibi(ctx, u.x, u.y + 6, "dagger", side, f, { armorColor: "#ab47bc", isAttacking: u.isAttacking });
+
+          // Render health overlay bars above injured units
+          if (u.hp < u.maxHp) {
+            drawHealthBar(u.x, u.y - 34, u.hp, u.maxHp);
+          }
+        }
+      });
+
+      // 4. DRAW APPROACHING TIDE INVADERS
+      state.enemies.forEach(e => {
+        let f = e.frame;
+        if (e.id === "bronze") drawMugenChibi(ctx, e.x, e.y + 6, "bronze", -1, f, { armorColor: "#cd7f32", isAttacking: e.isAttacking, unarmed: true });
+        if (e.id === "silver") drawMugenChibi(ctx, e.x, e.y + 6, "silver", -1, f, { armorColor: "#c0c0c0", hasHelmet: true, isAttacking: e.isAttacking, unarmed: true });
+        if (e.id === "gold") drawMugenChibi(ctx, e.x, e.y + 6, "gold", -1, f, { armorColor: "#d4af37", hasHelmet: true, helmetColor: "#d4af37", isAttacking: e.isAttacking, unarmed: true });
+        if (e.id === "star") drawMugenChibi(ctx, e.x, e.y + 6, "star", -1, f, { armorColor: "#37474f", hasHelmet: true, helmetColor: "#37474f", isAttacking: e.isAttacking, unarmed: true });
+        if (e.id === "blakeman") drawMugenChibi(ctx, e.x, e.y + 6, "blakeman", -1, f, { armorColor: "#546e7a", skinColor: "#cfd8dc", isAttacking: e.isAttacking });
+        if (e.id === "rider") drawMugenChibi(ctx, e.x, e.y + -4, "rider", -1, f, { armorColor: "#212121", hasHelmet: true, helmetColor: "#f06292", isAttacking: e.isAttacking });
+        if (e.id === "dog") drawMugenChibi(ctx, e.x, e.y + 6, "dog", -1, f, { armorColor: "#263238", skinColor: "#37474f", isAttacking: e.isAttacking });
+
+        // Draw active health metric bar gauges
+        if (e.hp < e.maxHp) {
+          drawHealthBar(e.x, e.y - 34, e.hp, e.maxHp);
+        }
+      });
+
+      // 5. DRAW ACTIVE IN-FLIGHT AMMUNITION VECTORS
+      state.projectiles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3.5, 0, Math.PI*2);
+        ctx.fill();
+      });
+
+      // 6. DRAW FX PARTICLES
+      state.particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+        ctx.restore();
+      });
+
+      // 7. RENDERING REMOVAL DEMOLITION TARGET HUD MASK ELEMENTS
+      if (state.removalMode) {
+        ctx.strokeStyle = "rgba(211, 47, 47, 0.4)";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(cellW, gridOffsetY, canvas.width - cellW, canvas.height - gridOffsetY);
+      }
+    }
+
+    function drawHealthBar(x, y, current, max) {
+      let w = 32; let h = 4.5;
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.fillRect(x - w/2, y, w, h);
+      let pct = Math.max(0, current / max);
+      ctx.fillStyle = pct > 0.4 ? "#388e3c" : "#d32f2f";
+      ctx.fillRect(x - w/2, y, w * pct, h);
+    }
+
+    // --- MAIN TICK INTERRUPT FRAME LOOPS ---
+    function tick() {
+      updateGame();
+      drawGame();
+      requestAnimationFrame(tick);
+    }
+
+    // --- BUTTON EVENT REGISTRATION ASSIGNMENTS ---
+    document.getElementById("playBtn").onclick = () => { makeStageCards(); showScreen("select"); };
+    document.getElementById("almanacBtn").onclick = () => { fillAlmanac("heroes"); openOverlay("almanac"); };
+    document.getElementById("howBtn").onclick = () => openOverlay("how");
+    document.getElementById("selectBack").onclick = () => showScreen("menu");
+    
+    document.querySelectorAll(".closeOverlay").forEach(b => b.onclick = closeOverlays);
+    document.querySelectorAll(".tab").forEach(b => b.onclick = () => fillAlmanac(b.dataset.tab));
+    
+    document.getElementById("againBtn").onclick = () => {
+      document.getElementById("resultScreen").classList.remove("active");
+      startGame(state.stage, state.diff);
+    };
+    document.getElementById("resultMenuBtn").onclick = () => {
+      document.getElementById("resultScreen").classList.remove("active");
+      showScreen("menu");
+    };
+
+    function openOverlay(id) { document.getElementById(id + "Overlay").classList.add("active"); }
+    function closeOverlays() { document.querySelectorAll(".overlay").forEach(o => o.classList.remove("active")); }
+
+    // Fire engine loop launch frames automatically
+    fillAlmanac("heroes");
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
