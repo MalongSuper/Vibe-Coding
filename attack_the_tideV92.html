@@ -4454,7 +4454,7 @@
                             if (target) {
                                 state.effects.push({ type: "witch_beam", x: e.x - 20, y: e.y - 20, t: 0.4,
                                     targetX: target.x, targetY: target.y });
-                                damageUnit(target, Math.floor(target.maxHp * 0.35));
+                                damageUnit(target, 125);
                                 setMsg("🧙 Witch casts purple beam on rightmost unit!");
                             }
                         }
