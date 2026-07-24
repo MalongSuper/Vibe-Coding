@@ -163,10 +163,10 @@
         margin: 16px 0;
         }
         .stage-grid .stage-card {
-            flex: 0 0 calc(33.33% - 12px);  /* 3 per row, adjust for gap */
-            min-width: 160px;              /* prevent too small on narrow screens */
+            flex: 0 0 calc(33.33% - 12px);
+            min-width: 160px;
         }
-        
+
         .stage-card {
             min-height: 80px;
             padding: 12px;
@@ -1134,25 +1134,27 @@
             const heroes = [
                 { id: "farmer", name: "Farmer", cost: 50, cd: 5, hp: 300, art: "#d4a552", desc: "Produces buns at its location every 10s." },
                 { id: "single", name: "Archer", cost: 100, cd: 5, hp: 300, art: "#6a8a5a",
-                    desc: "Fires one arrow (1 dmg) every 1.5s." },
+                    desc: "Fires one arrow (1 dmg)." },
                 { id: "double", name: "Double Archer", cost: 200, cd: 5, hp: 300, art: "#5a7a6a",
                     desc: "Fires two arrows (2 dmg total)." },
                 { id: "poison", name: "Dagger", cost: 175, cd: 5, hp: 300, art: "#7a5aaa",
-                    desc: "Throws poison, slows & reveals invisible." },
+                    desc: "Throws poison, slows enemies." },
                 { id: "shield", name: "Shield Man", cost: 50, cd: 15, hp: 2400, art: "#8a7a6a",
                     desc: "Very high health blocker." },
                 { id: "buddhist", name: "Buddhist", cost: 50, cd: 15, hp: 300, art: "#d4a52a",
                     desc: "Gold monk. Jumps to enemy 1 tile ahead or behind, destroys all on that tile. Single-use." },
                 { id: "mine", name: "Mine", cost: 25, cd: 15, hp: 300, art: "#6a4a2a",
-                    desc: "Arms after 15s, explodes and destroys ALL enemies on its tile. Single-use." },
+                    desc: "Arms after 10s, explodes and destroys ALL enemies on its tile. Single-use." },
                 { id: "spikeweed", name: "Spikeweed", cost: 100, cd: 15, hp: 300, art: "#5a7a3a",
-                    desc: "Damages ALL enemies on its tile continuously. Remains until destroyed." },
+                    desc: "Damages ALL enemies on its tile continuously. Single-use." },
                 { id: "bomb", name: "TNT Barrel", cost: 150, cd: 30, hp: 300, art: "#8a3a1a",
-                    desc: "Placed on a tile, explodes after 1s, destroying all enemies in a 3x3 area. Very High enemies lose 75% HP." },
+                    desc: "Placed on a tile, explodes after 1s, destroying all enemies in a 3x3 area." },
                 { id: "mage", name: "Mage", cost: 250, cd: 5, hp: 600, art: "#4a7aaa",
                     desc: "Shoots fire projectiles (3 dmg)." },
                 { id: "swordsman", name: "Swordsman", cost: 325, cd: 5, hp: 2400, art: "#6a7a5a",
-                    desc: "Tough melee attacker (6 dmg)." }
+                    desc: "Tough melee attacker (6 dmg)." },
+                { id: "priestess", name: "Priestess", cost: 500, cd: 15, hp: 1200, art: "#4a7aaa", 
+                desc: "Automatically fires a devastating blue arrow that clears her entire lane. Re‑arms after 20s." },
             ];
 
             const powerDefs = [
@@ -1162,6 +1164,8 @@
                     desc: "Burns every enemy on the battlefield with cleansing flame." },
                 { id: "ice", name: "Ice", cost: 75, cd: 60, art: "#b9f4ff",
                     desc: "Freezes every enemy on the battlefield solid." },
+                { id: "tornado", name: "Tornado", cost: 175, cd: 60, art: "#aaccdd", 
+                desc: "Summons a devastating tornado that strikes every enemy on the battlefield." },
                 { id: "chains", name: "Chains", cost: 50, cd: 45, art: "#9aa0aa",
                     desc: "Locks every enemy in place. Deals no damage." },
                 { id: "hand", name: "Pushing Hand", cost: 50, cd: 45, art: "#ffd6ba",
@@ -1176,6 +1180,8 @@
                 unique: false, basic: true, desc: "Veteran warrior in silver plate. Tougher and more aggressive." },
             gold: { name: "Gold Soldier", era: 0, hp: 24, speed: 20, dmg: 55, tough: "High", color: "#ffd700",
                 unique: false, basic: true, desc: "Elite gilded warrior. Devastating damage and high resilience." },
+            zombie: { name: "Zombie Soldier", era: 0, hp: 24, speed: 15, dmg: 55, tough: "High", color: "#6a8a3a",
+                unique: false, basic: true, desc: "A reanimated gold soldier with a green, rotting face. Same toughness, but now shambling." },
             star: { name: "Star Soldier", era: 0, hp: 8, speed: 18, dmg: 35, tough: "Low", color: "#222222",
                 unique: false, basic: true, star: true, desc: "Celestial champion. Drops a star if defeated in time." },
             rocket: { name: "Rocket Soldier", era: 1, hp: 16, speed: 20, dmg: 0, tough: "Medium", color: "#8a3a2a",
@@ -1200,6 +1206,9 @@
                 unique: true, desc: "Disciplined katana warrior. A grave threat to any defender." },
             girl: { name: "Chinese Martial Girl", era: 3, hp: 32, speed: 24, dmg: 75, tough: "High",
                 color: "#d32f2f", unique: true, desc: "Acrobatic martial artist. Dodges and overwhelms with flips." },
+            
+            street: { name: "Street Performer", era: 4, hp: 32, speed: 24, dmg: 75, tough: "High", color: "#d4a55a",
+                unique: true, desc: "A passionate girl who loves baseball. But also loves hitting the threats." },
 
             rider: { name: "Female Rider", era: 4, hp: 32, speed: 60, dmg: 0, tough: "High",
                 color: "#111", unique: true, desc: "Reckless biker. Crashes for a 3×3 explosion on impact." },
@@ -1218,19 +1227,19 @@
             const basicEnemyIds = ["bronze", "silver", "gold", "star", "rocket", "bamboo", "sword"];
             const uniqueEnemyIds = Object.keys(enemyTypes).filter(id => enemyTypes[id].unique);
 
-            const enemyOrder = ["bronze", "silver", "gold", "star", "rocket", "bamboo", "sword"];
+            const enemyOrder = ["bronze", "silver", "gold", "zombie", "star", "rocket", "bamboo", "sword"];
             const uniqueOrder = ["wrestler", "queen", "boneknight", "blake", "cannon", "ninja", "samurai", "girl",
-                "rider", "sentinel", "dog", "witch", "dragon"
+                "street", "rider", "sentinel", "dog", "witch", "dragon"
             ];
 
             const eraEnemyPools = [
-                ["bronze", "silver", "gold", "star"],
-                ["bronze", "silver", "gold", "star", "rocket", "wrestler", "queen"],
-                ["bronze", "silver", "gold", "star", "rocket", "bamboo", "boneknight", "blake", "cannon"],
-                ["bronze", "silver", "gold", "star", "rocket", "bamboo", "sword", "ninja", "samurai", "girl"],
-                ["bronze", "silver", "gold", "star", "rocket", "bamboo", "sword", "sentinel", "rider"],
-                ["bronze", "silver", "gold", "star", "rocket", "bamboo", "sword", "boneknight", "wrestler", "queen", "cannon",
-                    "blake", "ninja", "samurai", "girl", "rider", "sentinel", "dog", "witch", "dragon"
+                ["bronze", "silver", "gold", "zombie", "star"],
+                ["bronze", "silver", "gold", "zombie", "star", "rocket", "wrestler", "queen"],
+                ["bronze", "silver", "gold", "zombie", "star", "rocket", "bamboo", "boneknight", "blake", "cannon"],
+                ["bronze", "silver", "gold", "zombie", "star", "rocket", "bamboo", "sword", "ninja", "samurai", "girl"],
+                ["bronze", "silver", "gold", "zombie", "star", "rocket", "bamboo", "sword", "street", "rider", "sentinel"],
+                ["bronze", "silver", "gold", "zombie", "star", "rocket", "bamboo", "sword", "boneknight", "wrestler", "queen", "cannon",
+                    "blake", "ninja", "samurai", "girl", "street", "rider", "sentinel", "dog", "witch", "dragon"
                 ],
                 Object.keys(enemyTypes)
             ];
@@ -1242,7 +1251,6 @@
             // ----- DRAWING HELPERS -----
             function drawTNTBarrel(g, x, y, frame) {
                 g.save();
-                // FIX: shift barrel up by 10px to avoid encroaching lower lane
                 g.translate(x, y - 10);
                 const s = 0.9;
                 g.scale(s, s);
@@ -1365,6 +1373,57 @@
                 g.arc(0, -14, 3, 0, Math.PI * 2);
                 g.fill();
                 g.stroke();
+                g.restore();
+            }
+
+            function drawPriestess(g, x, y, frame) {
+                g.save();
+                g.translate(x, y);
+                const scale = 0.75;
+                g.scale(-scale, scale);
+                const bob = Math.sin(frame * 0.5) * 2;
+                const stride = Math.sin(frame * 0.7) * 5;
+
+                g.fillStyle = "#2a75d3";
+                g.strokeStyle = "#1a120e";
+                g.lineWidth = 2;
+                g.beginPath();
+                g.moveTo(-10, -55 + bob);
+                g.quadraticCurveTo(-30, -45 + bob, -25, -20 + bob);
+                g.quadraticCurveTo(-15, -35 + bob, -10, -45 + bob);
+                g.fill(); g.stroke();
+                g.beginPath();
+                g.moveTo(10, -55 + bob);
+                g.quadraticCurveTo(30, -45 + bob, 25, -20 + bob);
+                g.quadraticCurveTo(15, -35 + bob, 10, -45 + bob);
+                g.fill(); g.stroke();
+
+                g.fillStyle = "#ffffff";
+                g.strokeStyle = "#1a120e";
+                g.beginPath(); g.roundRect(-6 + stride, -15, 6, 15, 3); g.fill(); g.stroke();
+                g.beginPath(); g.roundRect(0 - stride, -15, 6, 15, 3); g.fill(); g.stroke();
+
+                g.fillStyle = "#ffffff";
+                g.beginPath(); g.roundRect(-10, -35 + bob, 20, 15, 4); g.fill(); g.stroke();
+                g.fillStyle = "#d3a92a";
+                g.beginPath(); g.roundRect(-12, -20 + bob, 24, 12, 2); g.fill(); g.stroke();
+
+                g.fillStyle = "#ffe0bd";
+                g.beginPath(); g.arc(0, -45 + bob, 12, 0, Math.PI * 2); g.fill(); g.stroke();
+                g.fillStyle = "#1a120e";
+                g.beginPath(); g.arc(-4, -47 + bob, 2, 0, Math.PI * 2); g.fill();
+                g.beginPath(); g.arc(4, -47 + bob, 2, 0, Math.PI * 2); g.fill();
+
+                g.fillStyle = "#2a75d3";
+                g.beginPath(); 
+                g.arc(0, -47 + bob, 12.5, Math.PI, Math.PI * 2); 
+                g.fill(); g.stroke();
+
+                g.fillStyle = "#8b5a2b";
+                g.beginPath(); g.roundRect(8, -45 + bob, 4, 40, 2); g.fill(); g.stroke();
+                g.fillStyle = "#ffffff";
+                g.beginPath(); g.roundRect(2, -32 + bob, 12, 8, 4); g.fill(); g.stroke();
+
                 g.restore();
             }
 
@@ -1637,6 +1696,70 @@
                 g.restore();
             }
 
+            function drawZombieSoldier(g, x, y, frame) {
+                g.save();
+                g.translate(x, y);
+                const scale = 0.75;
+                g.scale(-scale, scale);
+                const bob = Math.sin(frame * 0.5) * 2;
+                const stride = Math.sin(frame * 0.7) * 4;
+
+                g.fillStyle = "#ffd700";
+                g.strokeStyle = "#1a120e";
+                g.lineWidth = 3;
+                g.beginPath();
+                g.roundRect(-12, -35 + bob, 24, 25, 4);
+                g.fill();
+                g.stroke();
+
+                g.fillStyle = "#6a8a3a";
+                g.beginPath();
+                g.arc(0, -48 + bob, 14, 0, Math.PI * 2);
+                g.fill();
+                g.stroke();
+
+                g.fillStyle = "#3a4a2a";
+                g.strokeStyle = "#1a120e";
+                g.lineWidth = 1;
+                for (let i = -6; i <= 6; i += 4) {
+                    g.fillRect(i - 1, -40 + bob, 3, 6);
+                    g.strokeRect(i - 1, -40 + bob, 3, 6);
+                }
+
+                g.fillStyle = "#cc2222";
+                g.beginPath();
+                g.arc(-5, -46 + bob, 2.5, 0, Math.PI * 2);
+                g.fill();
+                g.beginPath();
+                g.arc(5, -46 + bob, 2.5, 0, Math.PI * 2);
+                g.fill();
+
+                g.strokeStyle = "#6a4a2a";
+                g.lineWidth = 3;
+                g.beginPath();
+                g.moveTo(20 + stride * 0.3, -30 + bob);
+                g.lineTo(34 + stride * 0.3, -50 + bob);
+                g.stroke();
+                g.fillStyle = "#b8b8b8";
+                g.beginPath();
+                g.moveTo(34 + stride * 0.3, -50 + bob);
+                g.lineTo(30 + stride * 0.3, -56 + bob);
+                g.lineTo(38 + stride * 0.3, -54 + bob);
+                g.fill();
+                g.stroke();
+
+                g.fillStyle = "#1a1a1a";
+                g.strokeStyle = "#1a120e";
+                g.lineWidth = 2;
+                const legOff = Math.sin(frame * 0.7) * 3;
+                g.fillRect(-6, -8 + bob + legOff, 4, 10);
+                g.strokeRect(-6, -8 + bob + legOff, 4, 10);
+                g.fillRect(2, -8 + bob - legOff, 4, 10);
+                g.strokeRect(2, -8 + bob - legOff, 4, 10);
+
+                g.restore();
+            }
+
             function drawRocketSoldier(g, x, y, frame) {
                 g.save();
                 g.translate(x, y);
@@ -1713,7 +1836,53 @@
                 g.restore();
             }
 
-            // ----- DRAW HERO (scaled 0.75) -----
+            function drawStreetPerformer(g, x, y, frame) {
+                g.save();
+                g.translate(x, y);
+                const scale = 0.75;
+                g.scale(-scale, scale);
+                const bob = Math.sin(frame * 0.5) * 2;
+                const stride = Math.sin(frame * 0.7) * 5;
+
+                g.fillStyle = "#f5d742";
+                g.strokeStyle = "#1a120e";
+                g.lineWidth = 2;
+                g.beginPath();
+                g.moveTo(0, -60 + bob);
+                g.quadraticCurveTo(-25, -45 + bob, -30, -10 + bob); 
+                g.lineTo(-15, -20 + bob);
+                g.quadraticCurveTo(0, -10 + bob, 15, -20 + bob); 
+                g.lineTo(30, -10 + bob);
+                g.quadraticCurveTo(25, -45 + bob, 0, -60 + bob); 
+                g.fill(); g.stroke();
+
+                g.fillStyle = "#333333";
+                g.strokeStyle = "#1a120e";
+                g.beginPath(); g.roundRect(-6 + stride, -15, 6, 15, 3); g.fill(); g.stroke();
+                g.beginPath(); g.roundRect(0 - stride, -15, 6, 15, 3); g.fill(); g.stroke();
+
+                g.fillStyle = "#8a2be2";
+                g.beginPath(); g.roundRect(-10, -35 + bob, 20, 20, 4); g.fill(); g.stroke();
+
+                g.fillStyle = "#ffe0bd";
+                g.beginPath(); g.arc(0, -45 + bob, 12, 0, Math.PI * 2); g.fill(); g.stroke();
+                g.fillStyle = "#1a120e";
+                g.beginPath(); g.arc(-4, -47 + bob, 2, 0, Math.PI * 2); g.fill();
+                g.beginPath(); g.arc(4, -47 + bob, 2, 0, Math.PI * 2); g.fill();
+
+                g.fillStyle = "#f5d742";
+                g.beginPath();
+                g.arc(0, -48 + bob, 12.5, Math.PI * 1.1, Math.PI * 1.9);
+                g.fill(); g.stroke();
+
+                g.fillStyle = "#8a2be2";
+                g.beginPath(); g.roundRect(0, -32 + bob, 14, 6, 3); g.fill(); g.stroke();
+                g.fillStyle = "#ff4500";
+                g.beginPath(); g.arc(16, -30 + bob, 5, 0, Math.PI * 2); g.fill(); g.stroke();
+
+                g.restore();
+            }
+
             function drawMugenHeroToCanvas(g, x, y, id, frame) {
                 g.save();
                 g.translate(x, y);
@@ -1721,6 +1890,9 @@
                 g.lineJoin = "round";
                 if (id === "bomb") { drawTNTBarrel(g, 0, 0, frame);
                     g.restore(); return; }
+                if (id === "priestess") { drawPriestess(g, 0, 0, frame); 
+                    g.restore(); return; }
+
                 const bob = [0, -2, 0, -2][frame % 4];
                 const stride = [-6, 0, 6, 0][frame % 4];
                 const scale = 0.75;
@@ -2009,7 +2181,6 @@
                 g.restore();
             }
 
-            // ----- DRAW ENEMY -----
             function drawMugenEnemyToCanvas(g, x, y, e, frame) {
                 const type = e.id;
                 g.save();
@@ -2023,6 +2194,8 @@
                     g.restore(); return; }
                 if (type === "rider") { drawFemaleRider(g, 0, 0, frame, e);
                     g.restore(); return; }
+                if (type === "street") { drawStreetPerformer(g, 0, 0, frame); g.restore(); return; }
+                if (type === "zombie") { drawZombieSoldier(g, 0, 0, frame); g.restore(); return; }
 
                 if (type === "cannon") {
                     g.save();
@@ -2617,7 +2790,6 @@
                     return;
                 }
 
-                // ----- DRAGON: larger scale (0.75), adjusted position -----
                 if (type === "dragon") {
                     const sc = 0.75;
                     g.scale(sc, sc);
@@ -2770,7 +2942,6 @@
                     return;
                 }
 
-                // ----- STANDARD ENEMY -----
                 const isGiant = (type === "sentinel");
                 const sc = isGiant ? 0.9 : 0.75;
                 g.scale(-sc, sc);
@@ -3114,40 +3285,47 @@
                 };
             }
 
-            // ----- PRE-RENDER ALL SPRITES -----
             function preRenderAll() {
-                heroes.forEach(h => {
-                    const frames = [];
-                    for (let f = 0; f < 4; f++) {
-                        const c = document.createElement("canvas");
-                        c.width = SPRITE_W;
-                        c.height = SPRITE_H;
-                        const g = c.getContext("2d");
-                        if (h.id === "spikeweed" || h.id === "mine") {
-                            drawTrapToCanvas(g, SPRITE_W / 2, SPRITE_H / 2 + 4, h.id, f, false);
-                        } else {
-                            drawMugenHeroToCanvas(g, SPRITE_W / 2, SPRITE_H / 2 + 4, h.id, f);
+                    heroes.forEach(h => {
+                        const frames = [];
+                        for (let f = 0; f < 4; f++) {
+                            const c = document.createElement("canvas");
+                            c.width = SPRITE_W;
+                            c.height = SPRITE_H;
+                            const g = c.getContext("2d");
+                            if (h.id === "spikeweed" || h.id === "mine") {
+                                drawTrapToCanvas(g, SPRITE_W / 2, SPRITE_H / 2 + 4, h.id, f, false);
+                            } else if (h.id === "priestess") {
+                                drawPriestess(g, SPRITE_W / 2, SPRITE_H / 2 + 4, f);
+                            } else {
+                                drawMugenHeroToCanvas(g, SPRITE_W / 2, SPRITE_H / 2 + 4, h.id, f);
+                            }
+                            frames.push(c);
                         }
-                        frames.push(c);
-                    }
-                    spriteCache.heroes[h.id] = frames;
-                });
-                Object.keys(enemyTypes).forEach(id => {
-                    const e = enemyTypes[id];
-                    const frames = [];
-                    for (let f = 0; f < 4; f++) {
-                        const c = document.createElement("canvas");
-                        c.width = SPRITE_W;
-                        c.height = SPRITE_H;
-                        const g = c.getContext("2d");
-                        const fakeE = { id, type: e, stopped: false, bike: (id === "rider"), chain: 0, freeze: 0,
-                            slow: 0, invisible: false, jumped: false, jumpProgress: 0 };
-                        drawMugenEnemyToCanvas(g, SPRITE_W / 2, SPRITE_H / 2 + 4, fakeE, f);
-                        frames.push(c);
-                    }
-                    spriteCache.enemies[id] = frames;
-                });
-            }
+                        spriteCache.heroes[h.id] = frames;
+                    });
+                    Object.keys(enemyTypes).forEach(id => {
+                        const e = enemyTypes[id];
+                        const frames = [];
+                        for (let f = 0; f < 4; f++) {
+                            const c = document.createElement("canvas");
+                            c.width = SPRITE_W;
+                            c.height = SPRITE_H;
+                            const g = c.getContext("2d");
+                            const fakeE = { id, type: e, stopped: false, bike: (id === "rider"), chain: 0, freeze: 0,
+                                slow: 0, invisible: false, jumped: false, jumpProgress: 0 };
+                            if (id === "zombie") {
+                                drawZombieSoldier(g, SPRITE_W / 2, SPRITE_H / 2 + 4, f);
+                            } else if (id === "street") {
+                                drawStreetPerformer(g, SPRITE_W / 2, SPRITE_H / 2 + 4, f);
+                            } else {
+                                drawMugenEnemyToCanvas(g, SPRITE_W / 2, SPRITE_H / 2 + 4, fakeE, f);
+                            }
+                            frames.push(c);
+                        }
+                        spriteCache.enemies[id] = frames;
+                    });
+                }
 
             function drawTrapToCanvas(g, x, y, id, frame, armed) {
                 g.save();
@@ -3212,7 +3390,6 @@
                 g.restore();
             }
 
-            // ----- GAME STATE -----
             const state = {
                 mode: "menu",
                 buns: 100,
@@ -3266,7 +3443,6 @@
                 score: 0
             };
 
-            // ----- HELPERS -----
             function rand(a, b) { return a + Math.random() * (b - a); }
 
             function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -3304,7 +3480,6 @@
                 screens.how.classList.remove("active");
             }
 
-            // ----- STAGE CARDS -----
             function makeStageCards() {
                 el.stageGrid.innerHTML = "";
                 stages.forEach((s, i) => {
@@ -3318,9 +3493,8 @@
                 });
             }
 
-            // ----- CARDS (UI) -----
             const toolbarOrder = ["farmer", "single", "double", "poison", "shield", "buddhist", "mine", "spikeweed", "bomb",
-                "mage", "swordsman"
+                "mage", "swordsman", "priestess"
             ];
 
             function makeCards() {
@@ -3339,7 +3513,7 @@
                 });
 
                 el.powers.innerHTML = "";
-                const powerIcons = { thunder: "⚡", fire: "🔥", ice: "❄️", chains: "⛓️", hand: "🖐️" };
+                const powerIcons = { thunder: "⚡", fire: "🔥", ice: "❄️", tornado: "🌪️", chains: "⛓️", hand: "🖐️" };
                 powerDefs.forEach(p => {
                     const d = document.createElement("div");
                     d.className = "card power";
@@ -3387,7 +3561,6 @@
                 updateCards();
             }
 
-            // ----- SUPER POWERS -----
             function usePower(powerId) {
                 if (state.mode !== "playing" || state.gameOver || state.removeMode) return;
                 const p = powerDefs.find(v => v.id === powerId);
@@ -3417,24 +3590,34 @@
                         setMsg(`🔥 Fire burned ${count} enemies!`);
                         break;
                     }
+
                     case "ice": {
-                        state.effects.push({ type: "ice", t: 1.2 });
-                        state.enemies.forEach(e => {
-                            if (!e.dead) {
-                                e.freeze = 1.2;
-                                setTimeout(() => {
-                                    if (!e.dead) { damageEnemy(e, 99999, "area");
-                                        count++; }
-                                }, 200);
-                            }
-                        });
-                        state.enemies.forEach(e => {
-                            if (!e.dead) { damageEnemy(e, 99999, "area");
-                                count++; }
-                        });
-                        setMsg(`❄️ Ice froze and shattered ${count} enemies!`);
-                        break;
-                    }
+                    state.effects.push({ type: "ice", t: 1.2 });
+                    let count = 0;
+                    state.enemies.forEach(e => {
+                        if (!e.dead) {
+                            e.slow = 5;
+                            const dmg = Math.ceil(e.hp * 0.5);
+                            damageEnemy(e, dmg, "area");
+                            count++;
+                        }
+                    });
+                    setMsg(`❄️ Ice slowed ${count} enemies for 5s and dealt 50% damage!`);
+                    break;
+                }
+
+                case "tornado": {
+                    state.effects.push({ type: "tornado", t: 2.0 });
+                    let count = 0;
+                    state.enemies.forEach(e => {
+                        if (!e.dead) {
+                            damageEnemy(e, 99999, "area");
+                            count++;
+                        }
+                    });
+                    setMsg(`🌪️ Tornado swept away ${count} enemies!`);
+                    break;
+                }
                     case "chains": {
                         state.effects.push({ type: "chains", t: 2.0 });
                         state.enemies.forEach(e => {
@@ -3462,10 +3645,9 @@
                 updateCards();
             }
 
-            // ----- START GAME -----
             function startGame(stage, diff) {
                 let totalWaves, majorWaves;
-                if (stage === 6) { // Nightmare Era
+                if (stage === 6) {
                     if (diff === "easy") { totalWaves = 12; majorWaves = [4, 8, 12]; }
                     else if (diff === "medium") { totalWaves = 18; majorWaves = [6, 12, 18]; }
                     else { totalWaves = 24; majorWaves = [8, 16, 24]; }
@@ -3581,7 +3763,6 @@
                 }
             }
 
-            // ----- WAVE SPAWNING -----
             function makeWave(waveNo) {
             const stage = state.stage;
             const diff = state.diff;
@@ -3601,12 +3782,10 @@
             count = Math.max(1, count);
             if (isMajor) count += 2;
 
-            // ---- Current era pool ----
             const eraPool = eraEnemyPools[stage] || eraEnemyPools[0];
             const basicPool = eraPool.filter(id => enemyTypes[id] && !enemyTypes[id].unique && id !== "star");
             const uniquePool = eraPool.filter(id => enemyTypes[id] && enemyTypes[id].unique);
 
-            // ---- Previous eras unique pool ----
             let previousUniquePool = [];
             for (let e = 0; e < stage; e++) {
                 const prevPool = eraEnemyPools[e] || [];
@@ -3617,7 +3796,6 @@
                 });
             }
 
-            // ---- Weighted basic pool for regular enemies ----
             const weightedPool = [];
             basicPool.forEach((id, idx) => {
                 const weight = idx === 0 ? 3 : idx === 1 ? 2.5 : idx === 2 ? 2 : 1.5;
@@ -3625,7 +3803,6 @@
             });
             if (weightedPool.length === 0) weightedPool.push("bronze");
 
-            // ---- Choose current era unique enemies ----
             let chosenUniques = [];
             if (waveNo >= 5 && uniquePool.length > 0) {
                 let uniqueCount;
@@ -3640,15 +3817,13 @@
                 chosenUniques = shuffledUniques.slice(0, uniqueCount);
             }
 
-            // ---- Pick up to 2 random previous era uniques ----
             let previousUniques = [];
-            if (previousUniquePool.length > 0 && waveNo >= 3) { // start mixing from wave 3 onward
+            if (previousUniquePool.length > 0 && waveNo >= 3) {
                 const shuffledPrev = [...previousUniquePool].sort(() => Math.random() - 0.5);
                 const countPrev = Math.min(2, shuffledPrev.length);
                 previousUniques = shuffledPrev.slice(0, countPrev);
             }
 
-            // ---- Build spawn list ----
             const spawnList = [];
 
             function assignLane() {
@@ -3662,19 +3837,16 @@
                 return minLane;
             }
 
-            // 1. Current era uniques
             chosenUniques.forEach(id => {
                 const lane = assignLane();
                 spawnList.push({ id, lane, unique: true });
             });
 
-            // 2. Previous era uniques (up to 2)
             previousUniques.forEach(id => {
                 const lane = assignLane();
                 spawnList.push({ id, lane, unique: true });
             });
 
-            // 3. Regular enemies (fill remaining count)
             const regularCount = Math.max(0, count - chosenUniques.length - previousUniques.length);
             for (let i = 0; i < regularCount; i++) {
                 const id = pick(weightedPool);
@@ -3682,13 +3854,11 @@
                 spawnList.push({ id, lane, unique: false });
             }
 
-            // Shuffle spawn list for randomness
             for (let i = spawnList.length - 1; i > 0; i--) {
                 const j = Math.floor(rand(0, i + 1));
                 [spawnList[i], spawnList[j]] = [spawnList[j], spawnList[i]];
             }
 
-            // 4. Major wave – add a Star Soldier (or alt if stars full)
             if (isMajor) {
                 if (state.starsCollected < state.maxStars) {
                     const starLane = Math.floor(rand(0, 5));
@@ -3701,7 +3871,6 @@
                 }
             }
 
-            // Build spawn queue with delays
             state.spawnQueue = spawnList.map((item, i) => {
                 let id = item.id;
                 if (waveNo === 1 && i === 0) id = "bronze";
@@ -3756,7 +3925,6 @@
                     witchAttackTimer: t.id === "witch" ? 2.5 : 0,
                     cannonShootTimer: t.id === "cannon" ? 4 : 0,
                     toughness: t.tough || "Medium",
-                    // NEW: Star Soldier timer
                     starTimer: t.star ? 15 : 0,
                     starEligible: !!t.star
                 };
@@ -3764,7 +3932,6 @@
                 state.enemies.push(e);
             }
 
-            // ----- PLACEMENT & REMOVAL -----
             function cellFromPoint(px, py) {
                 const rect = canvas.getBoundingClientRect();
                 const x = (px - rect.left) * W / rect.width;
@@ -3779,7 +3946,6 @@
 
                 const pt = getCanvasPoint(ev);
 
-                // Click drops
                 for (let i = state.drops.length - 1; i >= 0; i--) {
                     const d = state.drops[i];
                     if (Math.hypot(pt.x - d.x, pt.y - d.y) < 30) {
@@ -3791,7 +3957,6 @@
                     }
                 }
 
-                // Remove mode
                 if (state.removeMode) {
                     const cell = cellFromPoint(ev.clientX, ev.clientY);
                     if (cell) {
@@ -3813,147 +3978,137 @@
                 placeHero(state.selected.id, cell.lane, cell.col);
             }
 
-  function placeHero(id, lane, col) {
-    const h = heroes.find(v => v.id === id);
-    if (col < 2 || col > grid.cols) return setMsg(`Column 1 is reserved for Spike Rollers.`);
-    if (state.units.some(u => u.lane === lane && u.col === col && !u.dead)) return setMsg("Cell occupied.");
-    if (state.buns < h.cost || state.cardCd[id] > 0) return;
+            function placeHero(id, lane, col) {
+                const h = heroes.find(v => v.id === id);
+                if (col < 2 || col > grid.cols) return setMsg(`Column 1 is reserved for Spike Rollers.`);
+                if (state.units.some(u => u.lane === lane && u.col === col && !u.dead)) return setMsg("Cell occupied.");
+                if (state.buns < h.cost || state.cardCd[id] > 0) return;
 
-    // ✅ Deduct cost and apply cooldown FIRST, before any special triggers
-    state.buns -= h.cost;
-    state.cardCd[id] = h.cd;
-    state.selected = null;
-    state.farmerPlaced = state.farmerPlaced || id === "farmer";
+                state.buns -= h.cost;
+                state.cardCd[id] = h.cd;
+                state.selected = null;
+                state.farmerPlaced = state.farmerPlaced || id === "farmer";
 
-    // ---- Special cases ----
-
-    if (id === "buddhist") {
-        // Buddhist logic (now cost/cooldown already deducted)
-        const enemiesOnTile = state.enemies.filter(e =>
-            !e.dead && e.lane === lane &&
-            Math.abs(e.x - colX(col)) < grid.cw * 0.6
-        );
-        if (enemiesOnTile.length > 0) {
-            const unit = {
-                id: "buddhist",
-                hero: h,
-                lane: lane,
-                col: col,
-                x: colX(col),
-                y: laneY(lane),
-                hp: h.hp,
-                maxHp: h.hp,
-                t: 0,
-                prodT: 10,
-                armT: 0,
-                armed: false,
-                dead: false,
-                slow: 0,
-                flash: 0,
-                attackT: 0,
-                squashing: true,
-                squashProgress: 0,
-                squashTargetCol: col,
-                squashLane: lane
-            };
-            state.units.push(unit);
-            setMsg("🪷 Buddhist squashes!");
-            updateHud();
-            updateCards();
-            return;
-        }
-    }
-
-    if (id === "spikeweed") {
-        const occupyingEnemy = state.enemies.find(e => enemyOccupiesCell(e, lane, col));
-        if (occupyingEnemy) {
-            // ✅ Trigger instantly, but cost/cooldown already paid
-            state.effects.push({ type: "spikeburst", x: colX(col), y: laneY(lane), t: 0.55, r: 8 });
-            state.enemies.forEach(e => {
-                if (!e.dead && e.lane === lane && Math.abs(e.x - colX(col)) < grid.cw * 0.5) {
-                    damageEnemy(e, 99999, "directSpikeweed");
-                }
-            });
-            setMsg("🌿 Spikeweed triggered!");
-            // No unit placed (it's consumed instantly)
-            updateHud();
-            updateCards();
-            return;
-        }
-        // If no enemy on tile, place it normally (will trigger later in update)
-        // Fall through to normal unit creation
-    }
-
-    // ---- Normal unit creation ----
-    const unit = {
-        id,
-        hero: h,
-        lane,
-        col,
-        x: colX(col),
-        y: laneY(lane),
-        hp: h.hp,
-        maxHp: h.hp,
-        t: 0,
-        prodT: 10,
-        armT: 0,
-        armed: false,
-        dead: false,
-        slow: 0,
-        flash: 0,
-        attackT: 0,
-        squashing: false,
-        squashProgress: 0,
-        squashTargetCol: null,
-        squashLane: null
-    };
-    state.units.push(unit);
-
-    // Bomb special (after placement)
-    if (id === "bomb") {
-        state.effects.push({ type: "bombflash", lane, col, t: 1.0 });
-        const bombUnit = unit;
-        setTimeout(() => {
-            if (bombUnit && !bombUnit.dead) {
-                const laneMin = Math.max(0, bombUnit.lane - 1);
-                const laneMax = Math.min(4, bombUnit.lane + 1);
-                const colMin = Math.max(1, bombUnit.col - 1);
-                const colMax = Math.min(grid.cols, bombUnit.col + 1);
-                let affected = 0, veryHighAffected = 0;
-                state.enemies.forEach(e => {
-                    if (e.dead) return;
-                    const eCol = exactXToCol(e.x);
-                    if (eCol === null) return;
-                    if (e.lane >= laneMin && e.lane <= laneMax && eCol >= colMin && eCol <= colMax) {
-                        if (e.toughness === "Very High") {
-                            const dmg = e.maxHp * 0.75;
-                            damageEnemy(e, dmg, "bomb", true);
-                            veryHighAffected++;
-                        } else {
-                            damageEnemy(e, 99999, "bomb");
-                        }
-                        affected++;
+                if (id === "buddhist") {
+                    const enemiesOnTile = state.enemies.filter(e =>
+                        !e.dead && e.lane === lane &&
+                        Math.abs(e.x - colX(col)) < grid.cw * 0.6
+                    );
+                    if (enemiesOnTile.length > 0) {
+                        const unit = {
+                            id: "buddhist",
+                            hero: h,
+                            lane: lane,
+                            col: col,
+                            x: colX(col),
+                            y: laneY(lane),
+                            hp: h.hp,
+                            maxHp: h.hp,
+                            t: 0,
+                            prodT: 10,
+                            armT: 0,
+                            armed: false,
+                            dead: false,
+                            slow: 0,
+                            flash: 0,
+                            attackT: 0,
+                            squashing: true,
+                            squashProgress: 0,
+                            squashTargetCol: col,
+                            squashLane: lane
+                        };
+                        state.units.push(unit);
+                        setMsg("🪷 Buddhist squashes!");
+                        updateHud();
+                        updateCards();
+                        return;
                     }
-                });
-                state.effects.push({ type: "explosion", x: bombUnit.x, y: bombUnit.y, t: 0.8, r: 28 });
-                bombUnit.dead = true;
-                let msg = `💥 TNT Barrel exploded! ${affected} enemies hit.`;
-                if (veryHighAffected > 0) msg += ` ${veryHighAffected} Very High enemies took 75% damage.`;
-                setMsg(msg);
+                }
+
+                if (id === "spikeweed") {
+                    const occupyingEnemy = state.enemies.find(e => enemyOccupiesCell(e, lane, col));
+                    if (occupyingEnemy) {
+                        state.effects.push({ type: "spikeburst", x: colX(col), y: laneY(lane), t: 0.55, r: 8 });
+                        state.enemies.forEach(e => {
+                            if (!e.dead && e.lane === lane && Math.abs(e.x - colX(col)) < grid.cw * 0.5) {
+                                damageEnemy(e, 99999, "directSpikeweed");
+                            }
+                        });
+                        setMsg("🌿 Spikeweed triggered!");
+                        updateHud();
+                        updateCards();
+                        return;
+                    }
+                }
+
+                const unit = {
+                    id,
+                    hero: h,
+                    lane,
+                    col,
+                    x: colX(col),
+                    y: laneY(lane),
+                    hp: h.hp,
+                    maxHp: h.hp,
+                    t: 0,
+                    prodT: 10,
+                    armT: 0,
+                    armed: false,
+                    dead: false,
+                    slow: 0,
+                    flash: 0,
+                    attackT: 0,
+                    squashing: false,
+                    squashProgress: 0,
+                    squashTargetCol: null,
+                    squashLane: null,
+                    armTimer: 0
+                };
+                state.units.push(unit);
+
+                if (id === "priestess") {
+                    unit.armTimer = 20;
+                    unit.armed = false;
+                }
+
+                if (id === "bomb") {
+                    state.effects.push({ type: "bombflash", lane, col, t: 1.0 });
+                    const bombUnit = unit;
+                    setTimeout(() => {
+                        if (bombUnit && !bombUnit.dead) {
+                            const laneMin = Math.max(0, bombUnit.lane - 1);
+                            const laneMax = Math.min(4, bombUnit.lane + 1);
+                            const colMin = Math.max(1, bombUnit.col - 1);
+                            const colMax = Math.min(grid.cols, bombUnit.col + 1);
+                            let affected = 0, veryHighAffected = 0;
+                            state.enemies.forEach(e => {
+                                if (e.dead) return;
+                                const eCol = exactXToCol(e.x);
+                                if (eCol === null) return;
+                                if (e.lane >= laneMin && e.lane <= laneMax && eCol >= colMin && eCol <= colMax) {
+                                    if (e.toughness === "Very High") {
+                                        damageEnemy(e, e.maxHp, "bomb");
+                                        veryHighAffected++;
+                                    } else {
+                                        damageEnemy(e, 99999, "bomb");
+                                    }
+                                    affected++;
+                                }
+                            });
+                            state.effects.push({ type: "explosion", x: bombUnit.x, y: bombUnit.y, t: 0.8, r: 28 });
+                            bombUnit.dead = true;
+                            let msg = `💥 TNT Barrel exploded! ${affected} enemies hit.`;
+                            if (veryHighAffected > 0) msg += ` ${veryHighAffected} Very High enemies were obliterated!`;
+                            setMsg(msg);
+                            updateHud();
+                            updateCards();
+                        }
+                    }, 1000);
+                }
+
                 updateHud();
                 updateCards();
             }
-        }, 1000);
-    }
-
-            // For Buddhist, if we didn't squash, we keep the unit as normal (but we already handled it above)
-            // Actually if buddhist is placed without enemy, it remains as normal unit
-            // We need to handle that: in our above buddhist block, if no enemy, we fall through to normal unit creation.
-            // So we should move the buddhist special case to after normal unit creation? But it's okay as is.
-
-            updateHud();
-            updateCards();
-        }
 
             function enemyOccupiesCell(e, lane, col) {
                 if (e.dead || e.lane !== lane) return false;
@@ -3968,7 +4123,6 @@
                 return { x: (ev.clientX - rect.left) * W / rect.width, y: (ev.clientY - rect.top) * H / rect.height };
             }
 
-            // ----- UPDATE LOOP -----
             let last = performance.now();
 
             function loop(now) {
@@ -3987,7 +4141,6 @@
                 draw();
             }
 
-            // ----- GAME UPDATE -----
             function updateGame(dt) {
                 if (state.preparationPhase) {
                     state.preparationTime -= dt;
@@ -4025,7 +4178,6 @@
                 updateProgressBar();
                 updateStarBar();
 
-                // FIX: victory condition - only trigger when wave equals totalWaves (not >=) and wave > 0
                 if (!state.gameOver && state.wave === state.totalWaves && state.wave > 0 && state.spawnQueue.length === 0 && state.enemies.every(e => e.dead)) {
                     if (!state.victoryPending) {
                         state.victoryPending = true;
@@ -4058,13 +4210,40 @@
                 }
             }
 
-            // ----- UNIT UPDATE -----
             function updateUnits(dt) {
                 state.units.forEach(u => {
                     if (u.dead) return;
                     u.t += dt;
                     u.flash = Math.max(0, u.flash - dt);
                     u.slow = Math.max(0, u.slow - dt);
+
+                    if (u.id === "priestess") {
+                        if (!u.armed) {
+                            u.armTimer -= dt;
+                            if (u.armTimer <= 0) {
+                                const lane = u.lane;
+                                const targets = state.enemies.filter(e => !e.dead && e.lane === lane);
+                                let count = 0;
+                                targets.forEach(e => {
+                                    damageEnemy(e, 99999, "area");
+                                    count++;
+                                });
+                                state.effects.push({
+                                    type: "bigbluearrow",
+                                    x: grid.x + grid.cw * grid.cols,
+                                    y: laneY(lane),
+                                    t: 0.8,
+                                    lane: lane
+                                });
+                                u.armed = false;
+                                u.armTimer = 20;
+                                setMsg(`🌀 Priestess fired! ${count} enemies obliterated in lane ${lane + 1}! Re‑arming...`);
+                                updateHud();
+                                updateCards();
+                            }
+                        }
+                        return;
+                    }
 
                     if (u.id === "buddhist") {
                         if (u.squashing) {
@@ -4144,22 +4323,22 @@
                         }
                     }
 
-                    // ----- SWORDSMAN with slash animation -----
                     if (u.id === "swordsman") {
                         u.attackT -= dt;
                         if (u.attackT <= 0) {
-                            const target = state.enemies.find(e =>
-                                !e.dead && e.lane === u.lane &&
-                                Math.abs(e.x - u.x) < grid.cw * 0.6
-                            );
+                            const target = state.enemies
+                                .filter(e => !e.dead && e.lane === u.lane && e.x > u.x && e.x < u.x + grid.cw * 1.15)
+                                .sort((a, b) => a.x - b.x)[0];
                             if (target) {
                                 u.attackT = 1.0;
                                 damageEnemy(target, 6, "targeted");
                                 u.flash = 0.15;
+                                const midX = (u.x + target.x) / 2;
+                                const midY = (u.y + target.y) / 2;
                                 state.effects.push({
                                     type: "slash",
-                                    x: u.x + 28,
-                                    y: u.y - 8,
+                                    x: midX,
+                                    y: midY,
                                     t: 0.5,
                                     r: 32,
                                     angle: -0.6 + (target.y - u.y) * 0.008,
@@ -4189,7 +4368,7 @@
 
                     if (u.id === "mine") {
                         u.armT += dt;
-                        if (u.armT >= 15 && !u.armed) { u.armed = true;
+                        if (u.armT >= 10 && !u.armed) { u.armed = true;
                             setMsg("💣 Mine armed!"); }
                         if (u.armed) {
                             const enemiesOnTile = state.enemies.filter(e =>
@@ -4229,8 +4408,6 @@
                                     }
                                 }
                             });
-
-                            // ✅ Spikeweed is consumed after use
                             u.dead = true;
                             setMsg("🌿 Spikeweed used up!");
                         }
@@ -4259,7 +4436,6 @@
                     .sort((a, b) => a.x - b.x)[0];
             }
 
-            // ----- ENEMY UPDATE -----
             function updateEnemies(dt) {
                 state.enemies.forEach(e => {
                     if (e.dead) { e.deathT -= dt; return; }
@@ -4268,7 +4444,6 @@
                     e.freeze = Math.max(0, e.freeze - dt);
                     e.slow = Math.max(0, e.slow - dt);
 
-                    // NEW: Star Soldier timer
                     if (e.starTimer > 0) {
                         e.starTimer -= dt;
                         if (e.starTimer <= 0) {
@@ -4278,26 +4453,22 @@
                     }
 
                     if (e.id === "bamboo" && !e.dead) {
-                    // If currently jumping, skip movement – handled by interval
                     if (e.jumped) {
                         return;
                     }
 
-                    // Find the nearest unit ahead (to the left) in the same lane
                     const target = state.units
                         .filter(u => !u.dead && u.lane === e.lane &&
-                            // ✅ Bamboo CANNOT jump over: Buddhist, Spikeweed, or armed Mine
                             u.id !== "buddhist" &&
                             u.id !== "spikeweed" &&
                             !(u.id === "mine" && u.armed === true) &&
-                            u.x < e.x)   // unit is to the left (in bamboo's path)
-                        .sort((a, b) => b.x - a.x)[0]; // closest to bamboo
+                            u.x < e.x)
+                        .sort((a, b) => b.x - a.x)[0];
 
                     if (target) {
                         const dist = Math.abs(e.x - target.x);
                         if (dist < grid.cw * 1.2) {
                             const landCol = Math.max(2, target.col - 1);
-                            // Ensure landing cell is valid and not occupied
                             if (landCol >= 2 && !state.units.some(u => u.lane === e.lane && u.col === landCol && !u.dead)) {
                                 e.jumped = true;
                                 e.jumpProgress = 0;
@@ -4324,7 +4495,6 @@
                         }
                     }
 
-                    // No jump triggered – normal movement
                     if (e.chain <= 0 && e.freeze <= 0) e.x -= e.speed * dt;
                     if (e.x <= colX(1) + 5) leakEnemy(e);
                     return;
@@ -4335,14 +4505,10 @@
                         .filter(u => !u.dead && u.lane === e.lane && Math.abs(e.x - u.x) < grid.cw * 0.6)
                         .sort((a, b) => b.x - a.x)[0];
                     if (blocker) {
-                        // Check if blocker is an instant-kill unit (bomb, spikeweed, armed mine, buddhist)
                         const isInstantKill = blocker.id === "bomb" || blocker.id === "spikeweed" || (blocker.id === "mine" && blocker.armed) || blocker.id === "buddhist";
                         if (isInstantKill) {
-                            // Do NOT explode – let the trap kill the rocket normally.
-                            // Stop movement and exit so the trap's own update can handle it.
                             return;
                         }
-                        // Normal explosion for other defenders
                         const col = xToCol(e.x);
                         const lane = e.lane;
                         state.effects.push({ type: "explosion", x: e.x, y: e.y, t: 0.6, r: 22 });
@@ -4367,13 +4533,10 @@
                         .filter(u => !u.dead && u.lane === e.lane && Math.abs(e.x - u.x) < grid.cw * 0.85)
                         .sort((a, b) => b.x - a.x)[0];
                     if (blocker) {
-                        // Check if blocker is an instant-kill trap
                         const isInstantKill = blocker.id === "bomb" || blocker.id === "spikeweed" || (blocker.id === "mine" && blocker.armed) || blocker.id === "buddhist";
                         if (isInstantKill) {
-                            // Do NOT explode – let the trap kill the rider
                             return;
                         }
-                        // Normal explosion for other defenders
                         const col = xToCol(e.x);
                         const lane = e.lane;
                         state.effects.push({ type: "explosion", x: e.x, y: e.y, t: 0.7, r: 22 });
@@ -4393,7 +4556,6 @@
                     return;
                 }
 
-                    // ----- DRAGON: fixed lane for fire effect -----
                     if (e.id === "dragon") {
                         e.dragonAttackTimer -= dt;
                         if (e.dragonAttackTimer <= 0) {
@@ -4416,7 +4578,6 @@
                         return;
                     }
 
-                    // Queen
                     if (e.id === "queen") {
                         e.queenAttackTimer -= dt;
                         if (e.queenAttackTimer <= 0) {
@@ -4445,14 +4606,13 @@
                         return;
                     }
 
-                    // ----- WITCH: targets rightmost unit -----
                     if (e.id === "witch") {
                         e.witchAttackTimer -= dt;
                         if (e.witchAttackTimer <= 0) {
                             e.witchAttackTimer = 2.8;
                             const target = state.units
                                 .filter(u => !u.dead && u.lane === e.lane)
-                                .sort((a, b) => b.x - a.x)[0]; // rightmost
+                                .sort((a, b) => b.x - a.x)[0];
                             if (target) {
                                 state.effects.push({ type: "witch_beam", x: e.x - 20, y: e.y - 20, t: 0.4,
                                     targetX: target.x, targetY: target.y });
@@ -4465,7 +4625,6 @@
                         return;
                     }
 
-                    // Cannon
                     if (e.id === "cannon") {
                         e.cannonShootTimer -= dt;
                         if (e.cannonShootTimer <= 0) {
@@ -4490,14 +4649,11 @@
                         return;
                     }
 
-                    // Sentinel
                     if (e.id === "sentinel") {
-                    // Find the RIGHTMOST defender in this lane (largest x, closest to Sentinel)
                     const target = state.units
                         .filter(u => !u.dead && u.lane === e.lane)
                         .sort((a, b) => b.x - a.x)[0];
 
-                    // Attack timer
                     if (target) {
                         e.sentinelAttackTimer -= dt;
                         if (e.sentinelAttackTimer <= 0) {
@@ -4515,13 +4671,11 @@
                         }
                     }
 
-                    // ALWAYS move forward (even if defenders exist)
                     if (e.chain <= 0 && e.freeze <= 0) e.x -= e.speed * dt;
                     if (e.x <= colX(1) + 5) leakEnemy(e);
                     return;
                 }
 
-                    // Other enemies
                     const blocking = findBlockingUnit(e);
                     if (blocking && !e.type.phase && !e.stopped && e.id !== "sentinel" && e.id !== "dragon" &&
                         e.id !== "queen" && e.id !== "witch" && e.id !== "cannon") {
@@ -4568,7 +4722,6 @@
                 }
             }
 
-            // ----- PROJECTILES -----
             function updateProjectiles(dt) {
                 state.projectiles.forEach(p => {
                     if (p.dead) return;
@@ -4627,7 +4780,6 @@
                 state.projectiles = state.projectiles.filter(p => !p.dead);
             }
 
-            // ----- DAMAGE ENEMY with score -----
             function damageEnemy(e, dmg, kind, isPercent) {
                 if (e.dead) return;
                 if (e.id === "star") {
@@ -4636,27 +4788,25 @@
                         e.dead = true;
                         e.deathT = 1.15;
                         state.enemiesDefeated++;
-                        // NEW: Only give star bonus if still eligible
-            if (e.starEligible) {
-                state.score += 100; // star bonus
-                if (state.starsCollected < state.maxStars) {
-                    state.starsCollected++;
-                    const lane = e.lane;
-                    state.effects.push({ type: "explosion", x: colX(grid.cols) - 40, y: laneY(lane), t: 0.8, r: 28 });
-                    state.effects.push({ type: "starDrop", x: colX(grid.cols) - 40, y: laneY(lane), t: 1.2 });
-                    setMsg(`⭐ Star Soldier defeated! (Star ${state.starsCollected}/${state.maxStars})`);
-                    updateStarBar();
-                } else {
-                    setMsg("⭐ Star Soldier defeated!");
+                        if (e.starEligible) {
+                            state.score += 100;
+                            if (state.starsCollected < state.maxStars) {
+                                state.starsCollected++;
+                                const lane = e.lane;
+                                state.effects.push({ type: "explosion", x: colX(grid.cols) - 40, y: laneY(lane), t: 0.8, r: 28 });
+                                state.effects.push({ type: "starDrop", x: colX(grid.cols) - 40, y: laneY(lane), t: 1.2 });
+                                setMsg(`⭐ Star Soldier defeated! (Star ${state.starsCollected}/${state.maxStars})`);
+                                updateStarBar();
+                            } else {
+                                setMsg("⭐ Star Soldier defeated!");
+                            }
+                        } else {
+                            setMsg("⭐ Star Soldier faded – no star earned.");
+                        }
+                        updateScoreDisplay();
+                    }
+                    return;
                 }
-            } else {
-                // No star, but still give some consolation?
-                setMsg("⭐ Star Soldier faded – no star earned.");
-            }
-            updateScoreDisplay();
-        }
-        return;
-    }
 
                 if (isPercent && kind === "bomb") {
                     e.hp -= dmg;
@@ -4668,7 +4818,6 @@
                     e.dead = true;
                     e.deathT = 1.15;
                     state.enemiesDefeated++;
-                    // Add score based on toughness
                     const toughness = e.toughness || "Medium";
                     if (toughness === "Low") state.score += 50;
                     else if (toughness === "Medium") state.score += 75;
@@ -4687,14 +4836,6 @@
                 if (u.hp <= 0) u.dead = true;
             }
 
-            function areaKill(lane, col, laneRadius, colRadius, dmg, kind) {
-                state.enemies.forEach(e => {
-                    if (!e.dead && Math.abs(e.lane - lane) <= laneRadius && Math.abs(xToCol(e.x) - col) <=
-                        colRadius) damageEnemy(e, dmg, kind);
-                });
-            }
-
-            // ----- DROPS -----
             function updateDrops(dt) {
                 state.skyBunTimer -= dt;
                 if (state.skyBunTimer <= 0) {
@@ -4792,7 +4933,6 @@
                 state.rollers = state.rollers.filter(r => r.t > 0);
             }
 
-            // ----- END GAME with stars and score -----
             function endGame(win) {
                 if (state.gameOver) return;
                 state.gameOver = true;
@@ -4802,21 +4942,17 @@
                 el.resultTitle.textContent = win ? "Victory" : "Defeat";
 
                 const score = Math.floor(state.score);
-                // Build star display without any emoji: just ★★★ or ★★☆
                 const starDisplay = state.starsCollected > 0 ?
                     `${'★'.repeat(state.starsCollected)}${'☆'.repeat(state.maxStars - state.starsCollected)}` :
                     '';
                 const scoreDisplay = `Score: ${score}`;
-                // Capitalize difficulty
                 const diffName = state.diff.charAt(0).toUpperCase() + state.diff.slice(1);
                 const eraName = stages[state.stage].name;
 
                 if (win) {
                     if (state.stage < 5) {
-                        // Line 1: era + difficulty + "cleared!"
                         el.resultText.innerHTML = `${eraName} - ${diffName} cleared!<br>${starDisplay}<br>${scoreDisplay}`;
                     } else {
-                        // Final era: different message, but same layout
                         el.resultText.innerHTML = `You survived every era of the tide!<br>${starDisplay}<br>${scoreDisplay}`;
                     }
                 } else {
@@ -4838,7 +4974,6 @@
                 updateStarBar();
             }
 
-            // ----- DRAW -----
             function draw() {
                 ctx.clearRect(0, 0, W, H);
                 drawBackground();
@@ -5053,7 +5188,6 @@
                 ctx.restore();
             }
 
-            // ----- GRID -----
             function drawGrid() {
                 ctx.save();
                 for (let r = 0; r < grid.rows; r++) {
@@ -5149,7 +5283,6 @@
                 g.restore();
             }
 
-            // ----- DRAW UNITS -----
             function drawUnits() {
                 state.units.forEach(u => {
                     if (u.dead) return;
@@ -5179,7 +5312,6 @@
                 });
             }
 
-            // ----- DRAW ENEMIES -----
             function drawEnemies() {
                 state.enemies.forEach(e => {
                     ctx.save();
@@ -5202,11 +5334,9 @@
                                 ctx.translate(0, jumpOff);
                             }
                             const offX = e.type.giant ? -8 : 0;
-                            // NEW: Glow for Star Soldier when eligible
                             if (e.id === "star" && e.starEligible) {
                                 ctx.shadowColor = "#ffd700";
                                 ctx.shadowBlur = 30;
-                                // Also draw a golden ring
                                 ctx.strokeStyle = "rgba(255, 215, 0, 0.6)";
                                 ctx.lineWidth = 3;
                                 ctx.beginPath();
@@ -5218,7 +5348,6 @@
                             ctx.drawImage(frames[f], e.x - SPRITE_W / 2 + offX, e.y - SPRITE_H / 2 + 24);
                         
 
-                        // reset shadow
                         ctx.shadowBlur = 0;
                     }
 
@@ -5394,7 +5523,6 @@
                 });
             }
 
-            // ----- DRAW EFFECTS (including slash and dragonFire with lane) -----
             function drawEffects() {
                 state.effects.forEach(e => {
                     ctx.save();
@@ -5644,6 +5772,41 @@
                             ctx.fillRect((e.x || 0) + i * 20 - 6, 380, 12, 40);
                         }
                     }
+
+                    if (e.type === "tornado") {
+                        ctx.save();
+                        const a = clamp(e.t, 0, 1);
+                        ctx.globalAlpha = 0.6 * a;
+                        const cx = grid.x + grid.cw * grid.cols / 2;
+                        const cy = grid.y + grid.ch * grid.rows / 2;
+                        const maxR = 200 + 80 * (1 - a);
+                        ctx.strokeStyle = `rgba(200, 230, 255, ${0.4 * a})`;
+                        ctx.lineWidth = 3;
+                        for (let i = 0; i < 12; i++) {
+                            const angle = i / 12 * Math.PI * 2 + state.time * 0.8;
+                            const r = maxR * (0.4 + 0.6 * (i / 12));
+                            const x = cx + Math.cos(angle) * r;
+                            const y = cy + Math.sin(angle) * r;
+                            ctx.beginPath();
+                            ctx.arc(x, y, 10 + 20 * (1 - a), 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                        // swirling lines
+                        ctx.strokeStyle = `rgba(180, 220, 255, ${0.3 * a})`;
+                        ctx.lineWidth = 2;
+                        for (let i = 0; i < 30; i++) {
+                            const t = i / 30;
+                            const angle = t * Math.PI * 8 + state.time * 1.5;
+                            const r = maxR * t * 0.9;
+                            const x = cx + Math.cos(angle) * r;
+                            const y = cy + Math.sin(angle) * r;
+                            ctx.beginPath();
+                            ctx.arc(x, y, 4 + 6 * (1 - t), 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        ctx.restore();
+                    }
+
                     if (e.type === "dragonFire") {
                         ctx.globalAlpha = 0.5 * a;
                         const lane = e.lane !== undefined ? e.lane : 0;
@@ -5727,6 +5890,31 @@
                         ctx.fill();
                         ctx.shadowBlur = 0;
                     }
+
+                    if (e.type === "bigbluearrow") {
+                        ctx.save();
+                        ctx.globalAlpha = 0.8 * clamp(e.t, 0, 1);
+                        const lane = e.lane !== undefined ? e.lane : 0;
+                        const yPos = laneY(lane);
+                        const grad = ctx.createLinearGradient(grid.x, yPos - 40, grid.x + grid.cw * grid.cols, yPos + 40);
+                        grad.addColorStop(0, `rgba(80, 180, 255, ${0.9 * clamp(e.t, 0, 1)})`);
+                        grad.addColorStop(0.5, `rgba(30, 120, 255, ${0.6 * clamp(e.t, 0, 1)})`);
+                        grad.addColorStop(1, `rgba(10, 60, 255, ${0.3 * clamp(e.t, 0, 1)})`);
+                        ctx.fillStyle = grad;
+                        ctx.fillRect(grid.x - 20, yPos - 45, grid.cw * grid.cols + 40, 90);
+                        ctx.shadowColor = "#4488ff";
+                        ctx.shadowBlur = 40;
+                        ctx.fillStyle = `rgba(100, 200, 255, ${0.6 * clamp(e.t, 0, 1)})`;
+                        ctx.beginPath();
+                        ctx.moveTo(grid.x + grid.cw * grid.cols, yPos);
+                        ctx.lineTo(grid.x - 60, yPos - 30);
+                        ctx.lineTo(grid.x - 60, yPos + 30);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                        ctx.restore();
+                    }
+
                     if (e.type === "dodge") {
                         ctx.globalAlpha = a;
                         ctx.fillStyle = "#e8d5b8";
@@ -5756,7 +5944,6 @@
                 });
             }
 
-            // ----- PREVIEW CARDS -----
             function renderPreviewCard(c, kind, id, centered) {
                 const g = c.getContext("2d");
                 g.clearRect(0, 0, c.width, c.height);
@@ -5826,7 +6013,6 @@
                 g.restore();
             }
 
-            // ----- ALMANAC -----
             function fillAlmanac(tab = "heroes") {
                 document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
                 el.almanacList.innerHTML = "";
@@ -5872,7 +6058,6 @@
                 });
             }
 
-            // ----- EVENT BINDING -----
             document.getElementById("playBtn").onclick = () => { makeStageCards();
                 showScreen("select"); };
             document.getElementById("almanacBtn").onclick = () => { fillAlmanac("heroes");
@@ -5941,7 +6126,6 @@
                 }
             });
 
-            // ----- INIT -----
             preRenderAll();
             fillAlmanac("heroes");
             makeStageCards();
